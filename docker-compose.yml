@@ -1,0 +1,26 @@
+version: '3.7'
+
+services:
+  fastapi-template:
+    image: defelo/fastapi-template
+    restart: always
+    env_file: fastapi.env
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:alpine
+    restart: always
+
+  db:
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_USER: fastapi
+      MYSQL_PASSWORD: fastapi
+      MYSQL_DATABASE: fastapi
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    volumes:
+      - ./data/mariadb:/var/lib/mysql
