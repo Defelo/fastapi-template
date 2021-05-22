@@ -11,6 +11,7 @@ fastapi = "*"
 uvicorn = "*"
 aiohttp = "*"
 aioredis = "*"
+nest-asyncio = "*"
 
 [dev-packages]
 flake8 = "*"
