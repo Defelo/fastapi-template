@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
+from database import db
 from environment import SENTRY_DSN
 from logger import setup_sentry, get_logger
 
@@ -13,9 +14,19 @@ if SENTRY_DSN:
     setup_sentry(app, SENTRY_DSN, "fastapi", "1.0.0")
 
 
+@app.middleware("http")
+async def db_session(request: Request, call_next):
+    db.create_session()
+    try:
+        return await call_next(request)
+    finally:
+        await db.commit()
+        await db.close()
+
+
 @app.on_event("startup")
 async def on_startup():
-    pass
+    await db.create_tables()
 
 
 @app.on_event("shutdown")
