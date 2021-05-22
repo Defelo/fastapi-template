@@ -12,6 +12,10 @@ uvicorn = "*"
 aiohttp = "*"
 aioredis = "*"
 nest-asyncio = "*"
+sqlalchemy = "*"
+aiomysql = "*"
+asyncpg = "*"
+sentry-sdk = "*"
 
 [dev-packages]
 flake8 = "*"
