@@ -28,9 +28,7 @@ WORKDIR /app
 RUN set -x \
     && apk add --no-cache libpq~=13.3 \
     && addgroup -g 1000 api \
-    && adduser -G api -u 1000 -s /bin/bash -D -H api \
-    && mkdir /app/data \
-    && chown api:api /app/data
+    && adduser -G api -u 1000 -s /bin/bash -D -H api
 
 USER api
 
