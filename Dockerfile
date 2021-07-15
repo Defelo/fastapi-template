@@ -1,8 +1,8 @@
-FROM python:3.9-alpine AS builder
+FROM python:3.9.6-alpine AS builder
 
 RUN apk add --no-cache \
     build-base~=0.5 \
-    gcc~=10.2 \
+    gcc~=10.3 \
     musl-dev~=1.2 \
     libffi-dev~=3.3 \
     postgresql-dev~=13.3
@@ -19,7 +19,7 @@ ARG PIPENV_VENV_IN_PROJECT=true
 RUN pipenv install --deploy --ignore-pipfile
 
 
-FROM python:3.9-alpine
+FROM python:3.9.6-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-template"
 
