@@ -5,7 +5,7 @@ RUN apk add --no-cache \
     gcc~=10.3 \
     musl-dev~=1.2 \
     libffi-dev~=3.3 \
-    postgresql-dev~=13.3
+    postgresql-dev~=13.4
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-templat
 WORKDIR /app
 
 RUN set -x \
-    && apk add --no-cache libpq~=13.3 \
+    && apk add --no-cache libpq~=13.4 \
     && addgroup -g 1000 api \
     && adduser -G api -u 1000 -s /bin/bash -D -H api
 
@@ -36,7 +36,6 @@ EXPOSE 8000
 
 COPY --from=builder /build/.venv/lib /usr/local/lib
 
-COPY api.sh /app/
 COPY api /app/api/
 
-ENTRYPOINT /app/api.sh
+CMD ["python", "-m", "api"]
