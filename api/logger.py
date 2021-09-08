@@ -8,8 +8,10 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.logging import LoggingIntegration, ignore_logger
 from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+from uvicorn.config import LOGGING_CONFIG
+from uvicorn.logging import DefaultFormatter
 
-from environment import LOG_LEVEL
+from .environment import LOG_LEVEL
 
 
 def setup_sentry(app: FastAPI, dsn: str, name: str, version: str):
@@ -34,7 +36,11 @@ def setup_sentry(app: FastAPI, dsn: str, name: str, version: str):
     app.add_middleware(SentryAsgiMiddleware)
 
 
-logging_formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s")
+logging_formatter = DefaultFormatter(fmt := "[%(asctime)s] %(levelprefix)s %(message)s")
+LOGGING_CONFIG["formatters"]["default"]["fmt"] = fmt
+LOGGING_CONFIG["formatters"]["access"][
+    "fmt"
+] = '[%(asctime)s] %(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
 
 logging_handler = logging.StreamHandler(sys.stdout)
 logging_handler.setFormatter(logging_formatter)
