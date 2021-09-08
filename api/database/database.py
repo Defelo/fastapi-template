@@ -1,6 +1,5 @@
-from contextlib import asynccontextmanager
+from asyncio import Event
 from contextvars import ContextVar
-from functools import wraps
 from typing import TypeVar, Optional, Type
 
 # noinspection PyProtectedMember
@@ -8,12 +7,13 @@ from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.future import select as sa_select, Select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import Executable
 from sqlalchemy.sql.expression import exists as sa_exists, delete as sa_delete, Delete
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.selectable import Exists
 
-from environment import (
+from ..environment import (
     DB_DRIVER,
     DB_HOST,
     DB_PORT,
@@ -25,23 +25,37 @@ from environment import (
     POOL_SIZE,
     MAX_OVERFLOW,
 )
-from logger import get_logger
+from ..logger import get_logger
 
 T = TypeVar("T")
 
 logger = get_logger(__name__)
 
 
-def select(*entities, **kwargs) -> Select:
+def select(entity, *args) -> Select:
     """Shortcut for :meth:`sqlalchemy.future.select`"""
 
-    return sa_select(*entities, **kwargs)
+    if not args:
+        return sa_select(entity)
+
+    options = []
+    for arg in args:
+        if isinstance(arg, (tuple, list)):
+            head, *tail = arg
+            opt = selectinload(head)
+            for x in tail:
+                opt = opt.selectinload(x)
+            options.append(opt)
+        else:
+            options.append(selectinload(arg))
+
+    return sa_select(entity).options(*options)
 
 
-def filter_by(cls, **kwargs) -> Select:
-    """Shortcut for select().filer_by()"""
+def filter_by(cls, *args, **kwargs) -> Select:
+    """Shortcut for :meth:`sqlalchemy.future.Select.filter_by`"""
 
-    return select(cls).filter_by(**kwargs)
+    return select(cls, *args).filter_by(**kwargs)
 
 
 def exists(*entities, **kwargs) -> Exists:
@@ -108,6 +122,7 @@ class DB:
         self.Base = declarative_base()
 
         self._session: ContextVar[Optional[AsyncSession]] = ContextVar("session", default=None)
+        self._close_event: ContextVar[Optional[Event]] = ContextVar("close_event", default=None)
 
     async def create_tables(self):
         """Create all tables defined in enabled cog packages."""
@@ -168,10 +183,10 @@ class DB:
 
         return await self.first(select(count()).select_from(*args, **kwargs))
 
-    async def get(self, cls: Type[T], **kwargs) -> Optional[T]:
+    async def get(self, cls: Type[T], *args, **kwargs) -> Optional[T]:
         """Shortcut for first(filter_by(...))"""
 
-        return await self.first(filter_by(cls, **kwargs))
+        return await self.first(filter_by(cls, *args, **kwargs))
 
     async def commit(self):
         """Shortcut for :meth:`sqlalchemy.ext.asyncio.AsyncSession.commit`"""
@@ -184,11 +199,13 @@ class DB:
 
         if self._session.get():
             await self.session.close()
+            self._close_event.get().set()
 
     def create_session(self) -> AsyncSession:
         """Create a new async session and store it in the context variable."""
 
         self._session.set(session := AsyncSession(self.engine))
+        self._close_event.set(Event())
         return session
 
     @property
@@ -197,28 +214,8 @@ class DB:
 
         return self._session.get()
 
-
-@asynccontextmanager
-async def db_context():
-    """Async context manager for database sessions."""
-
-    db.create_session()
-    try:
-        yield
-    finally:
-        await db.commit()
-        await db.close()
-
-
-def db_wrapper(f):
-    """Decorator which wraps an async function in a database context."""
-
-    @wraps(f)
-    async def inner(*args, **kwargs):
-        async with db_context():
-            return await f(*args, **kwargs)
-
-    return inner
+    async def wait_for_close_event(self):
+        await self._close_event.get().wait()
 
 
 def get_database() -> DB:
@@ -240,7 +237,3 @@ def get_database() -> DB:
         max_overflow=MAX_OVERFLOW,
         echo=SQL_SHOW_STATEMENTS,
     )
-
-
-# global database connection object
-db: DB = get_database()
