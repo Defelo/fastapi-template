@@ -1,0 +1,18 @@
+from fastapi import APIRouter
+
+from ..auth import auth
+from ..exceptions import responses
+from ..exceptions.auth import InvalidTokenError
+from ..schemas.test import TestResponse
+
+router = APIRouter(tags=["test"])
+
+
+@router.get("/test", responses=responses(TestResponse))
+async def test():
+    return {"result": "hello world"}
+
+
+@router.get("/auth", dependencies=[auth], responses=responses(list[int], InvalidTokenError))
+async def test_auth():
+    return [1, 2, 3]
