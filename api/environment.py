@@ -11,7 +11,10 @@ LOG_LEVEL: str = getenv("LOG_LEVEL", "INFO")
 
 HOST = getenv("HOST", "0.0.0.0")  # noqa: S104
 PORT = int(getenv("PORT", "8000"))
-RELOAD = get_bool("RELOAD", False)
+ROOT_PATH: str = getenv("ROOT_PATH")
+
+DEBUG: bool = get_bool("DEBUG", False)
+RELOAD: bool = get_bool("RELOAD", False)
 
 # database configuration
 DB_DRIVER: str = getenv("DB_DRIVER", "mysql+aiomysql")
