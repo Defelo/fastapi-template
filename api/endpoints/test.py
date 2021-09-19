@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..auth import auth
+from ..auth import user_auth
 from ..exceptions import responses
 from ..exceptions.auth import InvalidTokenError
 from ..schemas.test import TestResponse
@@ -13,6 +13,6 @@ async def test():
     return {"result": "hello world"}
 
 
-@router.get("/auth", dependencies=[auth], responses=responses(list[int], InvalidTokenError))
+@router.get("/auth", dependencies=[user_auth], responses=responses(list[int], InvalidTokenError))
 async def test_auth():
     return [1, 2, 3]

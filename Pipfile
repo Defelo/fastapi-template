@@ -16,6 +16,9 @@ aiomysql = "*"
 asyncpg = "*"
 sentry-sdk = "*"
 pydantic = "*"
+argon2-cffi = "*"
+pyjwt = "*"
+starlette = "*"
 
 [dev-packages]
 flake8 = "*"
