@@ -1,7 +1,7 @@
 from aioredis import Redis, from_url
 
-from environment import REDIS_HOST, REDIS_PORT, REDIS_DB
-from logger import get_logger
+from .environment import REDIS_HOST, REDIS_PORT, REDIS_DB
+from .logger import get_logger
 
 logger = get_logger(__name__)
 
