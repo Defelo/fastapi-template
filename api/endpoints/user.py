@@ -59,7 +59,7 @@ async def create_user(data: CreateUser):
 @router.patch("/users/{user_id}", responses=user_responses(User, UserAlreadyExistsError))
 async def update_user(
     data: UpdateUser,
-    user: models.User = get_user(require_self_or_admin=True),
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
     admin: bool = is_admin,
     session: models.Session = user_auth,
 ):
@@ -81,6 +81,8 @@ async def update_user(
             raise PermissionDeniedError
 
         user.enabled = data.enabled
+        if not user.enabled:
+            await user.logout()
 
     if data.admin is not None and data.admin != user.admin:
         if user.id == session.user_id:
