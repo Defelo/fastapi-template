@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Request, Body
 
 from .. import models
-from ..auth import get_user, user_auth
+from ..auth import get_user, user_auth, admin_auth
 from ..database import db, filter_by
 from ..exceptions import responses
 from ..exceptions.auth import user_responses
@@ -36,6 +36,19 @@ async def login(data: Login, request: Request):
     user: Optional[models.User] = await models.User.authenticate(data.name, data.password)
     if not user:
         raise InvalidCredentialsError
+
+    session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
+    return {
+        "user": user.serialize,
+        "session": session.serialize,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
+
+
+@router.post("/sessions/{user_id}", dependencies=[admin_auth], responses=user_responses(LoginResponse))
+async def impersonate(request: Request, user: models.User = get_user()):
+    """Impersonate a specific user"""
 
     session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
     return {
