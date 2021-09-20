@@ -19,6 +19,7 @@ pydantic = "*"
 argon2-cffi = "*"
 pyjwt = "*"
 starlette = "*"
+pyotp = "*"
 
 [dev-packages]
 flake8 = "*"

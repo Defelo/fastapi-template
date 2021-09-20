@@ -22,6 +22,7 @@ ACCESS_TOKEN_TTL = int(getenv("ACCESS_TOKEN_TTL", "300"))  # 5 minutes
 REFRESH_TOKEN_TTL = int(getenv("REFRESH_TOKEN_TTL", "2592000"))  # 30 days
 HASH_TIME_COST = int(getenv("HASH_TIME_COST", "2"))
 HASH_MEMORY_COST = int(getenv("HASH_MEMORY_COST", "102400"))
+MFA_VALID_WINDOW: int = int(getenv("MFA_VALID_WINDOW", "1"))
 
 ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")

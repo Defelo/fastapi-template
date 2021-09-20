@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jwt
 from pydantic import BaseModel
 
@@ -22,6 +24,8 @@ class Session(BaseModel):
 class Login(BaseModel):
     name: str
     password: str
+    mfa_code: Optional[str] = ""
+    recovery_code: Optional[str] = ""
 
 
 class LoginResponse(BaseModel):

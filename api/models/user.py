@@ -28,6 +28,9 @@ class User(db.Base):
     registration: Union[Column, datetime] = Column(DateTime)
     enabled: Union[Column, bool] = Column(Boolean, default=True)
     admin: Union[Column, bool] = Column(Boolean, default=False)
+    mfa_secret: Union[Column, Optional[str]] = Column(String(32), nullable=True)
+    mfa_enabled: Union[Column, bool] = Column(Boolean, default=False)
+    mfa_recovery_code: Union[Column, Optional[str]] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
 
     @staticmethod
@@ -39,6 +42,9 @@ class User(db.Base):
             registration=datetime.utcnow(),
             enabled=enabled,
             admin=admin,
+            mfa_secret=None,
+            mfa_enabled=False,
+            mfa_recovery_code=None,
         )
         await db.add(user)
         return user
@@ -59,6 +65,7 @@ class User(db.Base):
             "registration": self.registration.timestamp(),
             "enabled": self.enabled,
             "admin": self.admin,
+            "mfa_enabled": self.mfa_enabled,
         }
 
     async def check_password(self, password) -> bool:

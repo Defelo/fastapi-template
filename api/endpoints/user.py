@@ -1,12 +1,23 @@
-from fastapi import APIRouter, Query
+import hashlib
+
+from fastapi import APIRouter, Query, Body
+from pyotp import random_base32
 from sqlalchemy import asc
 
 from .. import models
 from ..auth import get_user, admin_auth, is_admin, user_auth
 from ..database import db, select, filter_by
 from ..exceptions.auth import user_responses, PermissionDeniedError
-from ..exceptions.user import UserNotFoundError, UserAlreadyExistsError
-from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser
+from ..exceptions.user import (
+    UserNotFoundError,
+    UserAlreadyExistsError,
+    MFAAlreadyEnabledError,
+    MFANotInitializedError,
+    InvalidCodeError,
+    MFANotEnabledError,
+)
+from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, mfa_code_constr
+from ..utils import check_mfa_code
 
 router = APIRouter(tags=["users"])
 
@@ -78,6 +89,54 @@ async def update_user(
         user.admin = data.admin
 
     return user.serialize
+
+
+@router.post("/users/{user_id}/mfa", responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError))
+async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True)):
+    """Generate mfa secret"""
+
+    if user.mfa_enabled:
+        raise MFAAlreadyEnabledError
+
+    user.mfa_secret = random_base32(32)
+    return user.mfa_secret
+
+
+@router.put(
+    "/users/{user_id}/mfa",
+    responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
+)
+async def enable_mfa(
+    code: mfa_code_constr = Body(..., embed=True),
+    user: models.User = get_user(require_self_or_admin=True),
+):
+    """Enable mfa and generate recovery code"""
+
+    if user.mfa_enabled:
+        raise MFAAlreadyEnabledError
+    if not user.mfa_secret:
+        raise MFANotInitializedError
+    if not await check_mfa_code(code, user.mfa_secret):
+        raise InvalidCodeError
+
+    recovery_code = "-".join(random_base32()[:6] for _ in range(4))
+    user.mfa_recovery_code = hashlib.sha256(recovery_code.encode()).hexdigest()
+    user.mfa_enabled = True
+
+    return recovery_code
+
+
+@router.delete("/users/{user_id}/mfa", responses=user_responses(bool, UserNotFoundError, MFANotEnabledError))
+async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)):
+    """Disable mfa"""
+
+    if not user.mfa_secret and not user.mfa_enabled:
+        raise MFANotEnabledError
+
+    user.mfa_enabled = False
+    user.mfa_secret = None
+    user.mfa_recovery_code = None
+    return True
 
 
 @router.delete("/users/{user_id}", responses=user_responses(bool, PermissionDeniedError))

@@ -6,9 +6,11 @@ from ..utils import example, get_example
 
 USERNAME_REGEX = r"^[a-zA-Z0-9]{4,32}$"
 PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$"
+MFA_CODE_REGEX = r"^\d{6}$"
 
 user_constr = constr(regex=USERNAME_REGEX)
 password_constr = constr(regex=PASSWORD_REGEX)
+mfa_code_constr = constr(regex=MFA_CODE_REGEX)
 
 
 class User(BaseModel):
@@ -17,6 +19,7 @@ class User(BaseModel):
     registration: float
     enabled: bool
     admin: bool
+    mfa_enabled: bool
 
     Config = example(
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",
@@ -24,6 +27,7 @@ class User(BaseModel):
         registration=1615725447.182818,
         enabled=True,
         admin=False,
+        mfa_enabled=False,
     )
 
 
@@ -37,12 +41,12 @@ class UsersResponse(BaseModel):
 class CreateUser(BaseModel):
     name: user_constr
     password: password_constr
-    enabled: bool
-    admin: bool
+    enabled: bool = True
+    admin: bool = False
 
 
 class UpdateUser(BaseModel):
     name: Optional[user_constr]
     password: Optional[password_constr]
-    enabled: Optional[bool]
-    admin: Optional[bool]
+    enabled: Optional[bool] = True
+    admin: Optional[bool] = False
