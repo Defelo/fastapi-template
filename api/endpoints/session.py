@@ -76,6 +76,14 @@ async def refresh(refresh_token: str = Body(..., embed=True)):
     }
 
 
+@router.delete("/sessions", responses=user_responses(bool))
+async def logout_current_session(session: models.Session = user_auth):
+    """Delete all sessions of a given user"""
+
+    await session.logout()
+    return True
+
+
 @router.delete("/sessions/{user_id}", responses=user_responses(bool, UserNotFoundError))
 async def logout(user: models.User = get_user(models.User.sessions, require_self_or_admin=True)):
     """Delete all sessions of a given user"""
