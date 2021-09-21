@@ -45,7 +45,7 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
     return [session.serialize async for session in await db.stream(filter_by(models.Session, user_id=user.id))]
 
 
-@router.post("/sessions", responses=responses(LoginResponse, InvalidCredentialsError, InvalidCodeError))
+@router.post("/session", responses=responses(LoginResponse, InvalidCredentialsError, InvalidCodeError))
 async def login(data: Login, request: Request):
     """Create a new session"""
 
@@ -78,7 +78,7 @@ async def impersonate(request: Request, user: models.User = get_user()):
     }
 
 
-@router.put("/sessions", responses=responses(LoginResponse, InvalidRefreshTokenError))
+@router.put("/session", responses=responses(LoginResponse, InvalidRefreshTokenError))
 async def refresh(refresh_token: str = Body(..., embed=True)):
     """Refresh access token and refresh token"""
 
@@ -95,7 +95,7 @@ async def refresh(refresh_token: str = Body(..., embed=True)):
     }
 
 
-@router.delete("/sessions", responses=user_responses(bool))
+@router.delete("/session", responses=user_responses(bool))
 async def logout_current_session(session: models.Session = user_auth):
     """Delete all sessions of a given user"""
 
