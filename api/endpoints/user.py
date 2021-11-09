@@ -1,6 +1,6 @@
 import hashlib
 
-from fastapi import APIRouter, Query, Body
+from fastapi import APIRouter, Query, Body, Request
 from pyotp import random_base32
 from sqlalchemy import asc
 
@@ -8,6 +8,7 @@ from .. import models
 from ..auth import get_user, admin_auth, is_admin, user_auth
 from ..database import db, select, filter_by
 from ..exceptions.auth import user_responses, PermissionDeniedError
+from ..exceptions.oauth import RemoteAlreadyLinkedError, InvalidOAuthTokenError
 from ..exceptions.user import (
     UserNotFoundError,
     UserAlreadyExistsError,
@@ -15,7 +16,11 @@ from ..exceptions.user import (
     MFANotInitializedError,
     InvalidCodeError,
     MFANotEnabledError,
+    NoLoginMethodError,
+    CannotDeleteLastLoginMethodError,
 )
+from ..redis import redis
+from ..schemas.session import LoginResponse
 from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, mfa_code_constr
 from ..utils import check_mfa_code
 
@@ -45,21 +50,55 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
     return user.serialize
 
 
-@router.post("/users", dependencies=[admin_auth], responses=user_responses(User, UserAlreadyExistsError))
-async def create_user(data: CreateUser):
+@router.post(
+    "/users",
+    dependencies=[admin_auth],
+    responses=user_responses(LoginResponse, UserAlreadyExistsError, RemoteAlreadyLinkedError, NoLoginMethodError),
+)
+async def create_user(data: CreateUser, request: Request):
     """Create a new user"""
+
+    if not data.oauth_register_token and not data.password:
+        raise NoLoginMethodError
 
     if await db.exists(filter_by(models.User, name=data.name)):
         raise UserAlreadyExistsError
 
+    if data.oauth_register_token:
+        async with redis.pipeline() as pipe:
+            await pipe.get(key1 := f"oauth_register_token:{data.oauth_register_token}:provider")
+            await pipe.get(key2 := f"oauth_register_token:{data.oauth_register_token}:user_id")
+            await pipe.get(key3 := f"oauth_register_token:{data.oauth_register_token}:display_name")
+            provider_id, remote_user_id, display_name = await pipe.execute()
+
+        if not provider_id or not remote_user_id:
+            raise InvalidOAuthTokenError
+
+        await redis.delete(key1, key2, key3)
+
+        if await db.exists(
+            filter_by(models.OAuthUserConnection, provider_id=provider_id, remote_user_id=remote_user_id),
+        ):
+            raise RemoteAlreadyLinkedError
+
     user = await models.User.create(data.name, data.password, data.enabled, data.admin)
-    return user.serialize
+
+    if data.oauth_register_token:
+        await models.OAuthUserConnection.create(user.id, provider_id, remote_user_id, display_name)
+
+    session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
+    return {
+        "user": user.serialize,
+        "session": session.serialize,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+    }
 
 
 @router.patch("/users/{user_id}", responses=user_responses(User, UserAlreadyExistsError))
 async def update_user(
     data: UpdateUser,
-    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
+    user: models.User = get_user(models.User.sessions, models.User.oauth_connections, require_self_or_admin=True),
     admin: bool = is_admin,
     session: models.Session = user_auth,
 ):
@@ -74,6 +113,9 @@ async def update_user(
         user.name = data.name
 
     if data.password is not None:
+        if not user.oauth_connections:
+            raise CannotDeleteLastLoginMethodError
+
         await user.change_password(data.password)
 
     if data.enabled is not None and data.enabled != user.enabled:

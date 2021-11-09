@@ -5,7 +5,7 @@ from pydantic import BaseModel, constr
 from ..utils import example, get_example
 
 USERNAME_REGEX = r"^[a-zA-Z0-9]{4,32}$"
-PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$"
+PASSWORD_REGEX = r"^((?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,})?$"
 MFA_CODE_REGEX = r"^\d{6}$"
 
 user_constr = constr(regex=USERNAME_REGEX)
@@ -19,6 +19,7 @@ class User(BaseModel):
     registration: float
     enabled: bool
     admin: bool
+    password: bool
     mfa_enabled: bool
 
     Config = example(
@@ -27,6 +28,7 @@ class User(BaseModel):
         registration=1615725447.182818,
         enabled=True,
         admin=False,
+        password=True,
         mfa_enabled=False,
     )
 
@@ -40,7 +42,8 @@ class UsersResponse(BaseModel):
 
 class CreateUser(BaseModel):
     name: user_constr
-    password: password_constr
+    password: Optional[password_constr]
+    oauth_register_token: Optional[str]
     enabled: bool = True
     admin: bool = False
 
@@ -48,5 +51,5 @@ class CreateUser(BaseModel):
 class UpdateUser(BaseModel):
     name: Optional[user_constr]
     password: Optional[password_constr]
-    enabled: Optional[bool] = True
-    admin: Optional[bool] = False
+    enabled: Optional[bool]
+    admin: Optional[bool]

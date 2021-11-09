@@ -37,3 +37,15 @@ class MFANotEnabledError(APIException):
     status_code = status.HTTP_412_PRECONDITION_FAILED
     detail = "MFA not enabled"
     description = "MFA is not enabled."
+
+
+class NoLoginMethodError(APIException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    detail = "No login method"
+    description = "No login method was provided."
+
+
+class CannotDeleteLastLoginMethodError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "Cannot delete last login method"
+    description = "The last login method (password or oauth connection) cannot be deleted."

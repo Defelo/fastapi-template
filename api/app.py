@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
-from .endpoints import test, user, session
+from .endpoints import test, user, session, oauth
 from .environment import ROOT_PATH, DEBUG
 from .logger import get_logger
 from .models import User
@@ -55,4 +55,5 @@ async def on_shutdown():
 
 app.include_router(user.router)
 app.include_router(session.router)
+app.include_router(oauth.router)
 app.include_router(test.router)

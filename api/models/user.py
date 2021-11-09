@@ -14,6 +14,7 @@ from ..redis import redis
 from ..utils import hash_password, verify_password, decode_jwt
 
 if TYPE_CHECKING:
+    from .oauth_user_connection import OAuthUserConnection
     from .session import Session
 
 logger = get_logger(__name__)
@@ -32,13 +33,18 @@ class User(db.Base):
     mfa_enabled: Union[Column, bool] = Column(Boolean, default=False)
     mfa_recovery_code: Union[Column, Optional[str]] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
+    oauth_connections: list[OAuthUserConnection] = relationship(
+        "OAuthUserConnection",
+        back_populates="user",
+        cascade="all, delete",
+    )
 
     @staticmethod
     async def create(name: str, password: str, enabled: bool, admin: bool) -> User:
         user = User(
             id=str(uuid4()),
             name=name,
-            password=await hash_password(password),
+            password=await hash_password(password) if password else None,
             registration=datetime.utcnow(),
             enabled=enabled,
             admin=admin,
@@ -65,14 +71,18 @@ class User(db.Base):
             "registration": self.registration.timestamp(),
             "enabled": self.enabled,
             "admin": self.admin,
+            "password": bool(self.password),
             "mfa_enabled": self.mfa_enabled,
         }
 
     async def check_password(self, password) -> bool:
+        if not self.password:
+            return False
+
         return await verify_password(password, self.password)
 
     async def change_password(self, password):
-        self.password = await hash_password(password)
+        self.password = await hash_password(password) if password else None
 
     @staticmethod
     async def authenticate(name: str, password: str) -> Optional[User]:

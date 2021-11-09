@@ -43,3 +43,8 @@ class LoginResponse(BaseModel):
         ),
         refresh_token="KN4nF8BsiElQi_OoDYQ2BgVdhVirhTw67vOzfHutjONvazRXLsboZ__UG-oI-II3LoMNv9tgd6YBGYRGxNK7Ug",
     )
+
+
+class OAuthLoginResponse(BaseModel):
+    login: Optional[LoginResponse]
+    register_token: Optional[str]

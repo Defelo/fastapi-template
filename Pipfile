@@ -20,6 +20,7 @@ argon2-cffi = "*"
 pyjwt = "*"
 starlette = "*"
 pyotp = "*"
+jq = "*"
 
 [dev-packages]
 flake8 = "*"
