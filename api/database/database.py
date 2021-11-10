@@ -6,13 +6,12 @@ from typing import TypeVar, Optional, Type, Any, cast, AsyncIterator
 from sqlalchemy import Column
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.future import select as sa_select, Select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.future import select as sa_select
+from sqlalchemy.orm import selectinload, DeclarativeMeta, registry
 from sqlalchemy.sql import Executable
 from sqlalchemy.sql.expression import exists as sa_exists, delete as sa_delete, Delete
 from sqlalchemy.sql.functions import count
-from sqlalchemy.sql.selectable import Exists
+from sqlalchemy.sql.selectable import Exists, Select
 
 from ..environment import (
     DB_DRIVER,
@@ -33,7 +32,7 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 
-def select(entity: type, *args: Column) -> Select:
+def select(entity: Any, *args: Column[Any]) -> Select:
     """Shortcut for :meth:`sqlalchemy.future.select`"""
 
     if not args:
@@ -53,34 +52,32 @@ def select(entity: type, *args: Column) -> Select:
     return sa_select(entity).options(*options)
 
 
-def filter_by(cls: type, *args: Column, **kwargs: Any) -> Select:
+def filter_by(cls: Any, *args: Column[Any], **kwargs: Any) -> Select:
     """Shortcut for :meth:`sqlalchemy.future.Select.filter_by`"""
 
     return select(cls, *args).filter_by(**kwargs)
 
 
-def exists(statement: Executable, *entities: Column, **kwargs: Any) -> Exists:
+def exists(statement: Executable, *entities: Column[Any], **kwargs: Any) -> Exists:
     """Shortcut for :meth:`sqlalchemy.future.select`"""
 
     return sa_exists(statement, *entities, **kwargs)
 
 
-def delete(table: type) -> Delete:
+def delete(table: Any) -> Delete:
     """Shortcut for :meth:`sqlalchemy.sql.expression.delete`"""
 
     return sa_delete(table)
 
 
+class Base(metaclass=DeclarativeMeta):
+    __abstract__ = True
+    registry = registry()
+    metadata = registry.metadata
+    __init__ = registry.constructor
+
+
 class DB:
-    """
-    Database connection
-
-    Attributes
-    ----------
-    engine: :class:`sqlalchemy.engine.Engine`
-    Base: :class:`sqlalchemy.ext.declarative.DeclarativeMeta`
-    """
-
     def __init__(
         self,
         driver: str,
@@ -120,8 +117,6 @@ class DB:
             echo=echo,
         )
 
-        self.Base = declarative_base()
-
         self._session: ContextVar[Optional[AsyncSession]] = ContextVar("session", default=None)
         self._close_event: ContextVar[Optional[Event]] = ContextVar("close_event", default=None)
 
@@ -130,7 +125,7 @@ class DB:
 
         logger.debug("creating tables")
         async with self.engine.begin() as conn:
-            await conn.run_sync(self.Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.create_all)
 
     async def add(self, obj: T) -> T:
         """
@@ -154,37 +149,37 @@ class DB:
         await self.session.delete(obj)
         return obj
 
-    async def exec(self, statement: Executable, *args: Column, **kwargs: Any) -> Any:
+    async def exec(self, statement: Executable) -> Any:
         """Execute an sql statement and return the result."""
 
-        return await self.session.execute(statement, *args, **kwargs)
+        return await self.session.execute(statement)
 
-    async def stream(self, statement: Executable, *args: Column, **kwargs: Any) -> AsyncIterator[Any]:
+    async def stream(self, statement: Executable) -> AsyncIterator[Any]:
         """Execute an sql statement and stream the result."""
 
-        return cast(AsyncIterator[Any], (await self.session.stream(statement, *args, **kwargs)).scalars())
+        return cast(AsyncIterator[Any], (await self.session.stream(statement)).scalars())
 
-    async def all(self, statement: Executable, *args: Column, **kwargs: Any) -> list[Any]:
+    async def all(self, statement: Executable) -> list[Any]:
         """Execute an sql statement and return all results as a list."""
 
-        return [x async for x in await self.stream(statement, *args, **kwargs)]
+        return [x async for x in await self.stream(statement)]
 
-    async def first(self, statement: Executable, *args: Column, **kwargs: Any) -> Optional[Any]:
+    async def first(self, statement: Executable) -> Optional[Any]:
         """Execute an sql statement and return the first result."""
 
-        return (await self.exec(statement, *args, **kwargs)).scalar()
+        return (await self.exec(statement)).scalar()
 
-    async def exists(self, statement: Executable, *args: Column, **kwargs: Any) -> bool:
+    async def exists(self, statement: Executable, *args: Column[Any], **kwargs: Any) -> bool:
         """Execute an sql statement and return whether it returned at least one row."""
 
         return cast(bool, await self.first(exists(statement, *args, **kwargs).select()))
 
-    async def count(self, statement: Executable, *args: Column, **kwargs: Any) -> int:
+    async def count(self, statement: Executable, *args: Column[Any]) -> int:
         """Execute an sql statement and return the number of returned rows."""
 
-        return cast(int, await self.first(select(count()).select_from(statement, *args, **kwargs)))
+        return cast(int, await self.first(select(count()).select_from(statement, *args)))
 
-    async def get(self, cls: Type[T], *args: Column, **kwargs: Any) -> Optional[T]:
+    async def get(self, cls: Type[T], *args: Column[Any], **kwargs: Any) -> Optional[T]:
         """Shortcut for first(filter_by(...))"""
 
         return await self.first(filter_by(cls, *args, **kwargs))
@@ -214,7 +209,7 @@ class DB:
     def session(self) -> AsyncSession:
         """Get the session object for the current task"""
 
-        return self._session.get()
+        return cast(AsyncSession, self._session.get())
 
     async def wait_for_close_event(self) -> None:
         if close_event := self._close_event.get():

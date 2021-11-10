@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from functools import wraps
 from typing import Callable, TypeVar, Awaitable, Any, AsyncIterator
 
-from .database import get_database, select, filter_by, exists, delete
+from .database import get_database, select, filter_by, exists, delete, Base
 
 T = TypeVar("T")
 
@@ -32,3 +32,6 @@ def db_wrapper(f: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
 
 # global database connection object
 db = get_database()
+
+
+__all__ = ["db_context", "db_wrapper", "select", "filter_by", "exists", "delete", "db", "Base"]
