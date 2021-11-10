@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-from typing import Union, Optional
+from typing import Optional, Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, ForeignKey, DateTime, Text
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
 from .user import User
-from ..database import db, delete, db_wrapper
+from ..database import db, delete, Base
 from ..environment import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from ..logger import get_logger
 from ..redis import redis
@@ -28,15 +27,15 @@ def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-class Session(db.Base):
+class Session(Base):
     __tablename__ = "session"
 
-    id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    user_id: Union[Column, str] = Column(String(36), ForeignKey("user.id"))
+    id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
+    user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
     user: User = relationship("User", back_populates="sessions")
-    device_name: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    last_update: Union[Column, datetime] = Column(DateTime)
-    refresh_token: Union[Column, str] = Column(String(64), unique=True)
+    device_name: Mapped[str] = Column(Text(collation="utf8mb4_bin"))
+    last_update: Mapped[datetime] = Column(DateTime)
+    refresh_token: Mapped[str] = Column(String(64), unique=True)
 
     @staticmethod
     async def create(user_id: str, device_name: str) -> tuple[Session, str, str]:
@@ -48,11 +47,12 @@ class Session(db.Base):
             last_update=datetime.utcnow(),
             refresh_token=_hash_token(refresh_token),
         )
+        print(session.id)
         await db.add(session)
         return session, session._generate_access_token(), refresh_token
 
     @property
-    def serialize(self) -> dict:
+    def serialize(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "user_id": self.user_id,
@@ -91,20 +91,12 @@ class Session(db.Base):
         session.last_update = datetime.utcnow()
         return session, session._generate_access_token(), refresh_token
 
-    async def logout(self):
+    async def logout(self) -> None:
         await redis.setex(f"session_logout:{self.refresh_token}", ACCESS_TOKEN_TTL, 1)
         await db.delete(self)
 
-
-@db_wrapper
-async def _clean_expired_sessions():
-    await db.exec(delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)))
-
-
-async def clean_expired_sessions_loop():
-    while True:
-        try:
-            await _clean_expired_sessions()
-        except Exception as e:
-            logger.exception(e)
-        await asyncio.sleep(20 * 60)
+    @staticmethod
+    async def clean_expired_sessions() -> None:
+        await db.exec(
+            delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)),
+        )

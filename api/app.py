@@ -1,17 +1,17 @@
 import asyncio
 from typing import Callable, Awaitable, TypeVar
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
 from .endpoints import test, user, session, oauth
 from .environment import ROOT_PATH, DEBUG
 from .logger import get_logger
-from .models import User
-from .models.session import clean_expired_sessions_loop
+from .models import User, Session
 from .version import get_version
 
 T = TypeVar("T")
@@ -37,9 +37,19 @@ async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -
 
 
 @app.exception_handler(StarletteHTTPException)
-async def rollback_on_exception(request, exc):
+async def rollback_on_exception(request: Request, exc: HTTPException) -> JSONResponse:
     await db.session.rollback()
     return await http_exception_handler(request, exc)
+
+
+async def clean_expired_sessions_loop() -> None:
+    while True:
+        try:
+            async with db_context():
+                await Session.clean_expired_sessions()
+        except Exception as e:
+            logger.exception(e)
+        await asyncio.sleep(20 * 60)
 
 
 @app.on_event("startup")

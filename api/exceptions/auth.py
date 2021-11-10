@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Union, Any
 
 from fastapi import status
 
@@ -18,5 +18,5 @@ class PermissionDeniedError(APIException):
     description = "The user is not allowed to use this endpoint."
 
 
-def user_responses(default: Type, *args: Type[APIException]) -> dict:
+def user_responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
     return responses(default, *args, InvalidTokenError, PermissionDeniedError)

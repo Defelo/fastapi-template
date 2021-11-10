@@ -1,4 +1,5 @@
 import hashlib
+from typing import Any
 
 from fastapi import APIRouter, Query, Body, Request
 from pyotp import random_base32
@@ -21,14 +22,14 @@ from ..exceptions.user import (
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
-from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, mfa_code_constr
+from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, MFA_CODE_REGEX
 from ..utils import check_mfa_code
 
 router = APIRouter(tags=["users"])
 
 
 @router.get("/users", dependencies=[admin_auth], responses=user_responses(UsersResponse))
-async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0)):
+async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0)) -> Any:
     """Get all users"""
 
     total: int = await db.count(select(models.User))
@@ -44,7 +45,7 @@ async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0
 
 
 @router.get("/users/{user_id}", responses=user_responses(User, UserNotFoundError))
-async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True)):
+async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Get user by id"""
 
     return user.serialize
@@ -55,7 +56,7 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
     dependencies=[admin_auth],
     responses=user_responses(LoginResponse, UserAlreadyExistsError, RemoteAlreadyLinkedError, NoLoginMethodError),
 )
-async def create_user(data: CreateUser, request: Request):
+async def create_user(data: CreateUser, request: Request) -> Any:
     """Create a new user"""
 
     if not data.oauth_register_token and not data.password:
@@ -101,7 +102,7 @@ async def update_user(
     user: models.User = get_user(models.User.sessions, models.User.oauth_connections, require_self_or_admin=True),
     admin: bool = is_admin,
     session: models.Session = user_auth,
-):
+) -> Any:
     """Update a user"""
 
     if data.name is not None and data.name != user.name:
@@ -136,7 +137,7 @@ async def update_user(
 
 
 @router.post("/users/{user_id}/mfa", responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError))
-async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True)):
+async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Generate mfa secret"""
 
     if user.mfa_enabled:
@@ -151,9 +152,9 @@ async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True
     responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
 )
 async def enable_mfa(
-    code: mfa_code_constr = Body(..., embed=True),
+    code: str = Body(..., embed=True, regex=MFA_CODE_REGEX),
     user: models.User = get_user(require_self_or_admin=True),
-):
+) -> Any:
     """Enable mfa and generate recovery code"""
 
     if user.mfa_enabled:
@@ -171,7 +172,7 @@ async def enable_mfa(
 
 
 @router.delete("/users/{user_id}/mfa", responses=user_responses(bool, UserNotFoundError, MFANotEnabledError))
-async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)):
+async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Disable mfa"""
 
     if not user.mfa_secret and not user.mfa_enabled:
@@ -184,7 +185,7 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)):
 
 
 @router.delete("/users/{user_id}", responses=user_responses(bool, PermissionDeniedError))
-async def delete_user(user: models.User = get_user(models.User.sessions), session: models.Session = admin_auth):
+async def delete_user(user: models.User = get_user(models.User.sessions), session: models.Session = admin_auth) -> Any:
     """Delete a user"""
 
     if user.id == session.user_id:

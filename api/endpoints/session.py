@@ -1,5 +1,5 @@
 import hashlib
-from typing import Optional
+from typing import Optional, Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Request, Body
@@ -23,7 +23,10 @@ from ..utils import check_mfa_code
 router = APIRouter(tags=["sessions"])
 
 
-async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: Optional[str]):
+async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: Optional[str]) -> None:
+    if not user.mfa_enabled or not user.mfa_secret:
+        return
+
     if recovery_code:
         if hashlib.sha256(recovery_code.encode()).hexdigest() != user.mfa_recovery_code:
             raise InvalidCodeError
@@ -38,21 +41,21 @@ async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: 
 
 
 @router.get("/session", responses=user_responses(Session))
-async def get_current_session(session: models.Session = user_auth):
+async def get_current_session(session: models.Session = user_auth) -> Any:
     """Get current session"""
 
     return session.serialize
 
 
 @router.get("/sessions/{user_id}", responses=user_responses(list[Session], UserNotFoundError))
-async def get_sessions(user: models.User = get_user(require_self_or_admin=True)):
+async def get_sessions(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Get sessions of a given user"""
 
     return [session.serialize async for session in await db.stream(filter_by(models.Session, user_id=user.id))]
 
 
 @router.post("/sessions", responses=responses(LoginResponse, InvalidCredentialsError, InvalidCodeError))
-async def login(data: Login, request: Request):
+async def login(data: Login, request: Request) -> Any:
     """Create a new session"""
 
     user: Optional[models.User] = await models.User.authenticate(data.name, data.password)
@@ -72,7 +75,7 @@ async def login(data: Login, request: Request):
 
 
 @router.post("/sessions/oauth", responses=responses(OAuthLoginResponse, ProviderNotFoundError, InvalidOAuthCodeError))
-async def oauth_login(data: OAuthLogin, request: Request):
+async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     """Create a new session"""
 
     remote_user_id, display_name = await resolve_code(data)
@@ -87,7 +90,7 @@ async def oauth_login(data: OAuthLogin, request: Request):
         async with redis.pipeline() as pipe:
             await pipe.setex(f"oauth_register_token:{token}:provider", OAUTH_REGISTER_TOKEN_TTL, data.provider_id)
             await pipe.setex(f"oauth_register_token:{token}:user_id", OAUTH_REGISTER_TOKEN_TTL, remote_user_id)
-            await pipe.setex(f"oauth_register_token:{token}:display_name", OAUTH_REGISTER_TOKEN_TTL, display_name)
+            await pipe.setex(f"oauth_register_token:{token}:display_name", OAUTH_REGISTER_TOKEN_TTL, display_name or "")
             await pipe.execute()
 
         return {"register_token": token}
@@ -106,7 +109,7 @@ async def oauth_login(data: OAuthLogin, request: Request):
 
 
 @router.post("/sessions/{user_id}", dependencies=[admin_auth], responses=user_responses(LoginResponse))
-async def impersonate(request: Request, user: models.User = get_user()):
+async def impersonate(request: Request, user: models.User = get_user()) -> Any:
     """Impersonate a specific user"""
 
     session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
@@ -119,7 +122,7 @@ async def impersonate(request: Request, user: models.User = get_user()):
 
 
 @router.put("/session", responses=responses(LoginResponse, InvalidRefreshTokenError))
-async def refresh(refresh_token: str = Body(..., embed=True)):
+async def refresh(refresh_token: str = Body(..., embed=True)) -> Any:
     """Refresh access token and refresh token"""
 
     try:
@@ -136,7 +139,7 @@ async def refresh(refresh_token: str = Body(..., embed=True)):
 
 
 @router.delete("/session", responses=user_responses(bool))
-async def logout_current_session(session: models.Session = user_auth):
+async def logout_current_session(session: models.Session = user_auth) -> Any:
     """Delete current session"""
 
     await session.logout()
@@ -144,7 +147,7 @@ async def logout_current_session(session: models.Session = user_auth):
 
 
 @router.delete("/sessions/{user_id}", responses=user_responses(bool, UserNotFoundError))
-async def logout(user: models.User = get_user(models.User.sessions, require_self_or_admin=True)):
+async def logout(user: models.User = get_user(models.User.sessions, require_self_or_admin=True)) -> Any:
     """Delete all sessions of a given user"""
 
     await user.logout()
@@ -155,7 +158,7 @@ async def logout(user: models.User = get_user(models.User.sessions, require_self
     "/sessions/{user_id}/{session_id}",
     responses=user_responses(bool, UserNotFoundError, SessionNotFoundError),
 )
-async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)):
+async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Delete a specific session of a given user"""
 
     session: Optional[models.Session] = await db.get(models.Session, id=session_id, user_id=user.id)

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Union, Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, DateTime, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
-from ..database import db, select
+from ..database import db, select, Base
 from ..environment import ADMIN_USERNAME, ADMIN_PASSWORD
 from ..logger import get_logger
 from ..redis import redis
@@ -20,18 +20,18 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-class User(db.Base):
+class User(Base):
     __tablename__ = "user"
 
-    id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    name: Union[Column, str] = Column(String(32), unique=True)
-    password: Union[Column, Optional[str]] = Column(String(128), nullable=True)
-    registration: Union[Column, datetime] = Column(DateTime)
-    enabled: Union[Column, bool] = Column(Boolean, default=True)
-    admin: Union[Column, bool] = Column(Boolean, default=False)
-    mfa_secret: Union[Column, Optional[str]] = Column(String(32), nullable=True)
-    mfa_enabled: Union[Column, bool] = Column(Boolean, default=False)
-    mfa_recovery_code: Union[Column, Optional[str]] = Column(String(64), nullable=True)
+    id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
+    name: Mapped[str] = Column(String(32), unique=True)
+    password: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    registration: Mapped[datetime] = Column(DateTime)
+    enabled: Mapped[bool] = Column(Boolean, default=True)
+    admin: Mapped[bool] = Column(Boolean, default=False)
+    mfa_secret: Mapped[Optional[str]] = Column(String(32), nullable=True)
+    mfa_enabled: Mapped[bool] = Column(Boolean, default=False)
+    mfa_recovery_code: Mapped[Optional[str]] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
         "OAuthUserConnection",
@@ -40,7 +40,7 @@ class User(db.Base):
     )
 
     @staticmethod
-    async def create(name: str, password: str, enabled: bool, admin: bool) -> User:
+    async def create(name: str, password: Optional[str], enabled: bool, admin: bool) -> User:
         user = User(
             id=str(uuid4()),
             name=name,
@@ -56,7 +56,7 @@ class User(db.Base):
         return user
 
     @staticmethod
-    async def initialize():
+    async def initialize() -> None:
         if await db.exists(select(User)):
             return
 
@@ -64,7 +64,7 @@ class User(db.Base):
         logger.info(f"Admin user '{ADMIN_USERNAME}' has been created!")
 
     @property
-    def serialize(self) -> dict:
+    def serialize(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
@@ -75,13 +75,13 @@ class User(db.Base):
             "mfa_enabled": self.mfa_enabled,
         }
 
-    async def check_password(self, password) -> bool:
+    async def check_password(self, password: str) -> bool:
         if not self.password:
             return False
 
         return await verify_password(password, self.password)
 
-    async def change_password(self, password):
+    async def change_password(self, password: Optional[str]) -> None:
         self.password = await hash_password(password) if password else None
 
     @staticmethod
@@ -106,6 +106,6 @@ class User(db.Base):
 
         return await db.get(User, id=data["uid"], enabled=True)
 
-    async def logout(self):
+    async def logout(self) -> None:
         for session in self.sessions:
             await session.logout()

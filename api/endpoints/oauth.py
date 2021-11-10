@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from urllib.parse import urlunparse, parse_qsl, urlparse, urlencode
 
 from aiohttp import ClientSession, BasicAuth
@@ -22,11 +22,11 @@ router = APIRouter(tags=["oauth"])
 
 
 def add_qs(url: str, q: dict[str, str]) -> str:
-    *data, query, fragment = urlparse(url)
-    return urlunparse((*data, urlencode(parse_qsl(query) + [*q.items()]), fragment))
+    scheme, netloc, path, params, query, fragment = urlparse(url)
+    return urlunparse((scheme, netloc, path, params, urlencode(dict(parse_qsl(query)) | q), fragment))
 
 
-async def resolve_code(login: OAuthLogin) -> tuple[str, str]:
+async def resolve_code(login: OAuthLogin) -> tuple[str, Optional[str]]:
     if login.provider_id not in OAUTH_PROVIDERS:
         raise ProviderNotFoundError
 
@@ -70,7 +70,7 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, str]:
 
 
 @router.get("/oauth/providers", responses=responses(list[OAuthProvider]))
-async def get_oauth_providers():
+async def get_oauth_providers() -> Any:
     """Return a list of all supported OAuth providers"""
 
     return [
@@ -86,7 +86,7 @@ async def get_oauth_providers():
 @router.get("/oauth/links/{user_id}", responses=responses(list[OAuthConnection]))
 async def get_oauth_connections(
     user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),
-):
+) -> Any:
     """Get oauth connections"""
 
     return [connection.serialize for connection in user.oauth_connections]
@@ -96,7 +96,7 @@ async def get_oauth_connections(
     "/oauth/links/{user_id}",
     responses=responses(OAuthConnection, RemoteAlreadyLinkedError, ProviderNotFoundError, InvalidOAuthCodeError),
 )
-async def create_oauth_connection(login: OAuthLogin, user: models.User = get_user(require_self_or_admin=True)):
+async def create_oauth_connection(login: OAuthLogin, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Create new oauth connection"""
 
     user_id, display_name = await resolve_code(login)
@@ -113,7 +113,7 @@ async def create_oauth_connection(login: OAuthLogin, user: models.User = get_use
 async def delete_oauth_connection(
     connection_id: str,
     user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),
-):
+) -> Any:
     """Delete an oauth connection"""
 
     if not user.password and len(user.oauth_connections) <= 1:

@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-from typing import Union, Optional
+from typing import Optional, Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, Text, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
 from .user import User
-from ..database import db
+from ..database import db, Base
 
 
-class OAuthUserConnection(db.Base):
+class OAuthUserConnection(Base):
     __tablename__ = "oauth_user_connection"
 
-    id: Union[Column, str] = Column(String(36), primary_key=True, unique=True)
-    user_id: Union[Column, str] = Column(String(36), ForeignKey("user.id"))
+    id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
+    user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
     user: User = relationship("User", back_populates="oauth_connections")
-    provider_id: Union[Column, str] = Column(String(64))
-    remote_user_id: Union[Column, str] = Column(Text(collation="utf8mb4_bin"))
-    display_name: Union[Column, Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    provider_id: Mapped[str] = Column(String(64))
+    remote_user_id: Mapped[str] = Column(Text(collation="utf8mb4_bin"))
+    display_name: Mapped[Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
 
     @property
-    def serialize(self) -> dict:
+    def serialize(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "provider_id": self.provider_id,
