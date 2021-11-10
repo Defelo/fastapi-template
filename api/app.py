@@ -1,4 +1,5 @@
 import asyncio
+from typing import Callable, Awaitable, TypeVar
 
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -12,6 +13,8 @@ from .logger import get_logger
 from .models import User
 from .models.session import clean_expired_sessions_loop
 from .version import get_version
+
+T = TypeVar("T")
 
 logger = get_logger(__name__)
 
@@ -28,7 +31,7 @@ if DEBUG:
 
 
 @app.middleware("http")
-async def db_session(request: Request, call_next):
+async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -> T:
     async with db_context():
         return await call_next(request)
 
@@ -40,7 +43,7 @@ async def rollback_on_exception(request, exc):
 
 
 @app.on_event("startup")
-async def on_startup():
+async def on_startup() -> None:
     await db.create_tables()
     asyncio.create_task(clean_expired_sessions_loop())
 
@@ -49,7 +52,7 @@ async def on_startup():
 
 
 @app.on_event("shutdown")
-async def on_shutdown():
+async def on_shutdown() -> None:
     pass
 
 

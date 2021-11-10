@@ -3,11 +3,12 @@ from asyncio import get_event_loop
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta, datetime
 from functools import wraps
-from typing import Callable, Awaitable, Optional
+from typing import Callable, Awaitable, Optional, Any, cast, Type
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHash
+from pydantic import BaseModel, BaseConfig
 from pyotp import TOTP
 
 from .environment import HASH_TIME_COST, HASH_MEMORY_COST, JWT_SECRET, MFA_VALID_WINDOW
@@ -60,11 +61,11 @@ async def check_mfa_code(code: str, secret: str) -> bool:
     return True
 
 
-def get_example(arg: type) -> dict:
+def get_example(arg: Type[BaseModel]) -> dict[str, Any]:
     # noinspection PyUnresolvedReferences
-    return arg.Config.schema_extra["example"]
+    return cast(dict[str, dict[str, Any]], arg.Config.schema_extra)["example"]
 
 
-def example(*args, **kwargs) -> type:
+def example(*args: Type[BaseModel], **kwargs: Any) -> Type[BaseConfig]:
     ex = dict(e for arg in args for e in get_example(arg).items())
-    return type("Config", (), {"schema_extra": {"example": ex | kwargs}})
+    return cast(Type[BaseConfig], type("Config", (BaseConfig,), {"schema_extra": {"example": ex | kwargs}}))

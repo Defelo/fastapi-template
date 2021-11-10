@@ -14,7 +14,7 @@ from uvicorn.logging import DefaultFormatter
 from .environment import LOG_LEVEL
 
 
-def setup_sentry(app: FastAPI, dsn: str, name: str, version: str):
+def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
     """Initialize sentry connection."""
 
     sentry_sdk.init(

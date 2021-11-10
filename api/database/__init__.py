@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 from functools import wraps
+from typing import Callable, TypeVar, Awaitable, Any, AsyncIterator
 
 from .database import get_database, select, filter_by, exists, delete
 
+T = TypeVar("T")
+
 
 @asynccontextmanager
-async def db_context():
+async def db_context() -> AsyncIterator[None]:
     """Async context manager for database sessions."""
 
     db.create_session()
@@ -16,11 +19,11 @@ async def db_context():
         await db.close()
 
 
-def db_wrapper(f):
+def db_wrapper(f: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
     """Decorator which wraps an async function in a database context."""
 
     @wraps(f)
-    async def inner(*args, **kwargs):
+    async def inner(*args: Any, **kwargs: Any) -> T:
         async with db_context():
             return await f(*args, **kwargs)
 

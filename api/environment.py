@@ -3,6 +3,7 @@ import re
 import secrets
 from collections import namedtuple
 from os import getenv
+from typing import Optional
 
 import jq
 
@@ -17,7 +18,7 @@ LOG_LEVEL: str = getenv("LOG_LEVEL", "INFO")
 
 HOST = getenv("HOST", "0.0.0.0")  # noqa: S104
 PORT = int(getenv("PORT", "8000"))
-ROOT_PATH: str = getenv("ROOT_PATH")
+ROOT_PATH: str = getenv("ROOT_PATH", "")
 
 DEBUG: bool = get_bool("DEBUG", False)
 RELOAD: bool = get_bool("RELOAD", False)
@@ -50,7 +51,7 @@ REDIS_HOST = getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(getenv("REDIS_DB", "0"))
 
-SENTRY_DSN: str = getenv("SENTRY_DSN")  # sentry data source name
+SENTRY_DSN: Optional[str] = getenv("SENTRY_DSN")  # sentry data source name
 
 OAuthProvider = namedtuple(
     "OAuthProvider",
