@@ -74,7 +74,9 @@ class Base(metaclass=DeclarativeMeta):
     __abstract__ = True
     registry = registry()
     metadata = registry.metadata
-    __init__ = registry.constructor
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.registry.constructor(self, **kwargs)
 
 
 class DB:
