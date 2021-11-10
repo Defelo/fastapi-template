@@ -1,8 +1,13 @@
-def get_example(arg: type) -> dict:
+from typing import Any, cast, Type
+
+from pydantic import BaseModel, BaseConfig
+
+
+def get_example(arg: Type[BaseModel]) -> dict[str, Any]:
     # noinspection PyUnresolvedReferences
-    return arg.Config.schema_extra["example"]
+    return cast(dict[str, dict[str, Any]], arg.Config.schema_extra)["example"]
 
 
-def example(*args, **kwargs) -> type:
+def example(*args: Type[BaseModel], **kwargs: Any) -> Type[BaseConfig]:
     ex = dict(e for arg in args for e in get_example(arg).items())
-    return type("Config", (), {"schema_extra": {"example": ex | kwargs}})
+    return cast(Type[BaseConfig], type("Config", (BaseConfig,), {"schema_extra": {"example": ex | kwargs}}))

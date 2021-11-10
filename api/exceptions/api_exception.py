@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import Type, Any, Union
 
 from fastapi import HTTPException
 from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
@@ -6,19 +6,19 @@ from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 
 class APIException(HTTPException):
     status_code: int
-    detail: Optional[str] = None
+    detail: str
     description: str
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.status_code, self.detail)
 
 
-def responses(default: Type, *args: Type[APIException]) -> dict:
+def responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
     exceptions: dict[int, list[Type[APIException]]] = {}
     for exc in args:
         exceptions.setdefault(exc.status_code, []).append(exc)
 
-    out: dict[int, dict] = {}
+    out: dict[Union[int, str], dict[str, Any]] = {}
     for code, excs in exceptions.items():
         examples = {}
         for i, exc in enumerate(excs):

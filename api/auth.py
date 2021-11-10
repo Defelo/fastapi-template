@@ -19,7 +19,7 @@ class HTTPAuth(SecurityBase):
     async def _check_token(self, token: str) -> bool:
         return token == self._token
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> bool:
         if not await self._check_token(get_token(request)):
             raise InvalidTokenError
 

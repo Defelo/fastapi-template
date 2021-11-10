@@ -8,7 +8,7 @@ from .version import get_version
 logger = get_logger(__name__)
 
 
-def main():
+def main() -> None:
     if SENTRY_DSN:
         logger.debug("initializing sentry")
         setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
