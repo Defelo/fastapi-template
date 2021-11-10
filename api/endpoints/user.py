@@ -120,7 +120,7 @@ async def update_user(
         user.name = data.name
 
     if data.password is not None:
-        if not user.oauth_connections:
+        if not data.password and not user.oauth_connections:
             raise CannotDeleteLastLoginMethodError
 
         await user.change_password(data.password)
