@@ -34,6 +34,9 @@ MFA_VALID_WINDOW: int = int(getenv("MFA_VALID_WINDOW", "1"))
 ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")
 
+OPEN_REGISTRATION: bool = get_bool("OPEN_REGISTRATION", False)
+OPEN_OAUTH_REGISTRATION: bool = get_bool("OPEN_OAUTH_REGISTRATION", False)
+
 # database configuration
 DB_DRIVER: str = getenv("DB_DRIVER", "mysql+aiomysql")
 DB_HOST: str = getenv("DB_HOST", "localhost")

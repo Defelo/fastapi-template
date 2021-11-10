@@ -8,6 +8,7 @@ from sqlalchemy import asc
 from .. import models
 from ..auth import get_user, admin_auth, is_admin, user_auth
 from ..database import db, select, filter_by
+from ..environment import OPEN_REGISTRATION, OPEN_OAUTH_REGISTRATION
 from ..exceptions.auth import user_responses, PermissionDeniedError
 from ..exceptions.oauth import RemoteAlreadyLinkedError, InvalidOAuthTokenError
 from ..exceptions.user import (
@@ -19,6 +20,8 @@ from ..exceptions.user import (
     MFANotEnabledError,
     NoLoginMethodError,
     CannotDeleteLastLoginMethodError,
+    RegistrationDisabledError,
+    OAuthRegistrationDisabledError,
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
@@ -53,14 +56,17 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
 
 @router.post(
     "/users",
-    dependencies=[admin_auth],
     responses=user_responses(LoginResponse, UserAlreadyExistsError, RemoteAlreadyLinkedError, NoLoginMethodError),
 )
-async def create_user(data: CreateUser, request: Request) -> Any:
+async def create_user(data: CreateUser, request: Request, admin: bool = is_admin) -> Any:
     """Create a new user"""
 
     if not data.oauth_register_token and not data.password:
         raise NoLoginMethodError
+    if data.password and not OPEN_REGISTRATION and not admin:
+        raise RegistrationDisabledError
+    if data.oauth_register_token and not OPEN_OAUTH_REGISTRATION and not admin:
+        raise OAuthRegistrationDisabledError
 
     if await db.exists(filter_by(models.User, name=data.name)):
         raise UserAlreadyExistsError
@@ -82,7 +88,7 @@ async def create_user(data: CreateUser, request: Request) -> Any:
         ):
             raise RemoteAlreadyLinkedError
 
-    user = await models.User.create(data.name, data.password, data.enabled, data.admin)
+    user = await models.User.create(data.name, data.password, data.enabled, data.admin and admin)
 
     if data.oauth_register_token:
         await models.OAuthUserConnection.create(user.id, provider_id, remote_user_id, display_name)
@@ -185,10 +191,16 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) 
 
 
 @router.delete("/users/{user_id}", responses=user_responses(bool, PermissionDeniedError))
-async def delete_user(user: models.User = get_user(models.User.sessions), session: models.Session = admin_auth) -> Any:
+async def delete_user(
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
+    admin: bool = is_admin,
+) -> Any:
     """Delete a user"""
 
-    if user.id == session.user_id:
+    if not (OPEN_REGISTRATION or OPEN_OAUTH_REGISTRATION) and not admin:
+        raise PermissionDeniedError
+
+    if user.admin and not await db.exists(filter_by(models.User, admin=True).filter(models.User.id != user.id)):
         raise PermissionDeniedError
 
     await user.logout()

@@ -84,7 +84,7 @@ def get_user(*args: Column[Any], require_self_or_admin: bool = False) -> Any:
     if not require_self_or_admin:
         return Depends(default_dependency)
 
-    async def self_or_admin_dependency(user_id: str = "self", session: Session = user_auth) -> User:
+    async def self_or_admin_dependency(user_id: str, session: Session = user_auth) -> User:
         if user_id.lower() in ["me", "self"]:
             user_id = session.user_id
         if session.user_id != user_id and not session.user.admin:

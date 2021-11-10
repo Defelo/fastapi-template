@@ -49,3 +49,15 @@ class CannotDeleteLastLoginMethodError(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = "Cannot delete last login method"
     description = "The last login method (password or oauth connection) cannot be deleted."
+
+
+class RegistrationDisabledError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "Registration disabled"
+    description = "Registration is disabled."
+
+
+class OAuthRegistrationDisabledError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "OAuth Registration disabled"
+    description = "OAuth Registration is disabled."
