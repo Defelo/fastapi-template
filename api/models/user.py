@@ -84,14 +84,6 @@ class User(Base):
     async def change_password(self, password: Optional[str]) -> None:
         self.password = await hash_password(password) if password else None
 
-    @staticmethod
-    async def authenticate(name: str, password: str) -> Optional[User]:
-        user: Optional[User] = await db.get(User, name=name)
-        if not user or not user.enabled or not await user.check_password(password):
-            return None
-
-        return user
-
     async def create_session(self, device_name: str) -> tuple[Session, str, str]:
         from .session import Session
 

@@ -19,3 +19,9 @@ class InvalidRefreshTokenError(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = "Invalid refresh token"
     description = "This refresh token is invalid or the session has expired."
+
+
+class UserDisabledError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "User disabled"
+    description = "This user has been disabled."

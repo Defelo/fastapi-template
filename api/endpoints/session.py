@@ -12,7 +12,12 @@ from ..environment import OAUTH_REGISTER_TOKEN_TTL
 from ..exceptions import responses
 from ..exceptions.auth import user_responses, admin_responses
 from ..exceptions.oauth import ProviderNotFoundError, InvalidOAuthCodeError
-from ..exceptions.session import InvalidCredentialsError, SessionNotFoundError, InvalidRefreshTokenError
+from ..exceptions.session import (
+    InvalidCredentialsError,
+    SessionNotFoundError,
+    InvalidRefreshTokenError,
+    UserDisabledError,
+)
 from ..exceptions.user import UserNotFoundError, InvalidCodeError
 from ..models.session import SessionExpiredError
 from ..redis import redis
@@ -54,13 +59,19 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
     return [session.serialize async for session in await db.stream(filter_by(models.Session, user_id=user.id))]
 
 
-@router.post("/sessions", responses=responses(LoginResponse, InvalidCredentialsError, InvalidCodeError))
+@router.post(
+    "/sessions",
+    responses=responses(LoginResponse, InvalidCredentialsError, UserDisabledError, InvalidCodeError),
+)
 async def login(data: Login, request: Request) -> Any:
     """Create a new session"""
 
-    user: Optional[models.User] = await models.User.authenticate(data.name, data.password)
-    if not user:
+    user: Optional[models.User] = await db.get(models.User, name=data.name)
+    if not user or not await user.check_password(data.password):
         raise InvalidCredentialsError
+
+    if not user.enabled:
+        raise UserDisabledError
 
     if user.mfa_enabled:
         await _check_mfa(user, data.mfa_code, data.recovery_code)
@@ -74,7 +85,10 @@ async def login(data: Login, request: Request) -> Any:
     }
 
 
-@router.post("/sessions/oauth", responses=responses(OAuthLoginResponse, ProviderNotFoundError, InvalidOAuthCodeError))
+@router.post(
+    "/sessions/oauth",
+    responses=responses(OAuthLoginResponse, ProviderNotFoundError, InvalidOAuthCodeError, UserDisabledError),
+)
 async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     """Create a new session"""
 
@@ -96,6 +110,8 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
         return {"register_token": token}
 
     user = connection.user
+    if not user.enabled:
+        raise UserDisabledError
 
     session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
     return {
