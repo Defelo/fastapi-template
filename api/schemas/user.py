@@ -13,6 +13,7 @@ class User(BaseModel):
     id: str
     name: str
     registration: float
+    last_login: Optional[float]
     enabled: bool
     admin: bool
     password: bool
@@ -22,6 +23,7 @@ class User(BaseModel):
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",
         name="user42",
         registration=1615725447.182818,
+        last_login=1615735459.274742,
         enabled=True,
         admin=False,
         password=True,

@@ -27,6 +27,7 @@ class User(Base):
     name: Mapped[str] = Column(String(32), unique=True)
     password: Mapped[Optional[str]] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(DateTime)
+    last_login: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
     enabled: Mapped[bool] = Column(Boolean, default=True)
     admin: Mapped[bool] = Column(Boolean, default=False)
     mfa_secret: Mapped[Optional[str]] = Column(String(32), nullable=True)
@@ -46,6 +47,7 @@ class User(Base):
             name=name,
             password=await hash_password(password) if password else None,
             registration=datetime.utcnow(),
+            last_login=None,
             enabled=enabled,
             admin=admin,
             mfa_secret=None,
@@ -69,6 +71,7 @@ class User(Base):
             "id": self.id,
             "name": self.name,
             "registration": self.registration.timestamp(),
+            "last_login": self.last_login.timestamp() if self.last_login else None,
             "enabled": self.enabled,
             "admin": self.admin,
             "password": bool(self.password),
@@ -87,6 +90,7 @@ class User(Base):
     async def create_session(self, device_name: str) -> tuple[Session, str, str]:
         from .session import Session
 
+        self.last_login = datetime.utcnow()
         return await Session.create(self.id, device_name)
 
     @staticmethod
