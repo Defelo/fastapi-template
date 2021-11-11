@@ -19,4 +19,12 @@ class PermissionDeniedError(APIException):
 
 
 def user_responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
-    return responses(default, *args, InvalidTokenError, PermissionDeniedError)
+    """api responses for user_auth dependency"""
+
+    return responses(default, *args, InvalidTokenError)
+
+
+def admin_responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
+    """api responses for admin_auth dependency"""
+
+    return user_responses(default, *args, PermissionDeniedError)

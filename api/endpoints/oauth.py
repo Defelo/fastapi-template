@@ -9,13 +9,14 @@ from ..auth import get_user
 from ..database import db, filter_by
 from ..environment import OAUTH_PROVIDERS
 from ..exceptions import responses
+from ..exceptions.auth import admin_responses
 from ..exceptions.oauth import (
     ProviderNotFoundError,
     InvalidOAuthCodeError,
     RemoteAlreadyLinkedError,
     ConnectionNotFoundError,
 )
-from ..exceptions.user import CannotDeleteLastLoginMethodError
+from ..exceptions.user import CannotDeleteLastLoginMethodError, UserNotFoundError
 from ..schemas.oauth import OAuthLogin, OAuthProvider, OAuthConnection
 
 router = APIRouter(tags=["oauth"])
@@ -83,7 +84,7 @@ async def get_oauth_providers() -> Any:
     ]
 
 
-@router.get("/oauth/links/{user_id}", responses=responses(list[OAuthConnection]))
+@router.get("/oauth/links/{user_id}", responses=admin_responses(list[OAuthConnection], UserNotFoundError))
 async def get_oauth_connections(
     user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),
 ) -> Any:
@@ -94,7 +95,13 @@ async def get_oauth_connections(
 
 @router.post(
     "/oauth/links/{user_id}",
-    responses=responses(OAuthConnection, RemoteAlreadyLinkedError, ProviderNotFoundError, InvalidOAuthCodeError),
+    responses=admin_responses(
+        OAuthConnection,
+        UserNotFoundError,
+        RemoteAlreadyLinkedError,
+        ProviderNotFoundError,
+        InvalidOAuthCodeError,
+    ),
 )
 async def create_oauth_connection(login: OAuthLogin, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Create new oauth connection"""
@@ -109,7 +116,10 @@ async def create_oauth_connection(login: OAuthLogin, user: models.User = get_use
     return connection.serialize
 
 
-@router.delete("/oauth/links/{user_id}/{connection_id}", responses=responses(bool, ConnectionNotFoundError))
+@router.delete(
+    "/oauth/links/{user_id}/{connection_id}",
+    responses=admin_responses(bool, UserNotFoundError, CannotDeleteLastLoginMethodError, ConnectionNotFoundError),
+)
 async def delete_oauth_connection(
     connection_id: str,
     user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),

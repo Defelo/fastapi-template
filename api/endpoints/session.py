@@ -10,7 +10,7 @@ from ..auth import get_user, user_auth, admin_auth
 from ..database import db, filter_by
 from ..environment import OAUTH_REGISTER_TOKEN_TTL
 from ..exceptions import responses
-from ..exceptions.auth import user_responses
+from ..exceptions.auth import user_responses, admin_responses
 from ..exceptions.oauth import ProviderNotFoundError, InvalidOAuthCodeError
 from ..exceptions.session import InvalidCredentialsError, SessionNotFoundError, InvalidRefreshTokenError
 from ..exceptions.user import UserNotFoundError, InvalidCodeError
@@ -47,7 +47,7 @@ async def get_current_session(session: models.Session = user_auth) -> Any:
     return session.serialize
 
 
-@router.get("/sessions/{user_id}", responses=user_responses(list[Session], UserNotFoundError))
+@router.get("/sessions/{user_id}", responses=admin_responses(list[Session], UserNotFoundError))
 async def get_sessions(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Get sessions of a given user"""
 
@@ -108,7 +108,11 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     }
 
 
-@router.post("/sessions/{user_id}", dependencies=[admin_auth], responses=user_responses(LoginResponse))
+@router.post(
+    "/sessions/{user_id}",
+    dependencies=[admin_auth],
+    responses=admin_responses(LoginResponse, UserNotFoundError),
+)
 async def impersonate(request: Request, user: models.User = get_user()) -> Any:
     """Impersonate a specific user"""
 
@@ -146,7 +150,7 @@ async def logout_current_session(session: models.Session = user_auth) -> Any:
     return True
 
 
-@router.delete("/sessions/{user_id}", responses=user_responses(bool, UserNotFoundError))
+@router.delete("/sessions/{user_id}", responses=admin_responses(bool, UserNotFoundError))
 async def logout(user: models.User = get_user(models.User.sessions, require_self_or_admin=True)) -> Any:
     """Delete all sessions of a given user"""
 
@@ -156,7 +160,7 @@ async def logout(user: models.User = get_user(models.User.sessions, require_self
 
 @router.delete(
     "/sessions/{user_id}/{session_id}",
-    responses=user_responses(bool, UserNotFoundError, SessionNotFoundError),
+    responses=admin_responses(bool, UserNotFoundError, SessionNotFoundError),
 )
 async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Delete a specific session of a given user"""

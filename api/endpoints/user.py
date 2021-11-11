@@ -9,7 +9,7 @@ from .. import models
 from ..auth import get_user, admin_auth, is_admin, user_auth
 from ..database import db, select, filter_by
 from ..environment import OPEN_REGISTRATION, OPEN_OAUTH_REGISTRATION
-from ..exceptions.auth import user_responses, PermissionDeniedError
+from ..exceptions.auth import user_responses, PermissionDeniedError, admin_responses
 from ..exceptions.oauth import RemoteAlreadyLinkedError, InvalidOAuthTokenError
 from ..exceptions.user import (
     UserNotFoundError,
@@ -22,16 +22,17 @@ from ..exceptions.user import (
     CannotDeleteLastLoginMethodError,
     RegistrationDisabledError,
     OAuthRegistrationDisabledError,
+    RecaptchaError,
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
 from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, MFA_CODE_REGEX
-from ..utils import check_mfa_code
+from ..utils import check_mfa_code, recaptcha_enabled, check_recaptcha
 
 router = APIRouter(tags=["users"])
 
 
-@router.get("/users", dependencies=[admin_auth], responses=user_responses(UsersResponse))
+@router.get("/users", dependencies=[admin_auth], responses=admin_responses(UsersResponse))
 async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0)) -> Any:
     """Get all users"""
 
@@ -47,7 +48,7 @@ async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0
     }
 
 
-@router.get("/users/{user_id}", responses=user_responses(User, UserNotFoundError))
+@router.get("/users/{user_id}", responses=admin_responses(User, UserNotFoundError))
 async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Get user by id"""
 
@@ -56,17 +57,30 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
 
 @router.post(
     "/users",
-    responses=user_responses(LoginResponse, UserAlreadyExistsError, RemoteAlreadyLinkedError, NoLoginMethodError),
+    responses=user_responses(
+        LoginResponse,
+        UserAlreadyExistsError,
+        RemoteAlreadyLinkedError,
+        NoLoginMethodError,
+        RegistrationDisabledError,
+        OAuthRegistrationDisabledError,
+        RecaptchaError,
+        InvalidOAuthTokenError,
+    ),
 )
 async def create_user(data: CreateUser, request: Request, admin: bool = is_admin) -> Any:
     """Create a new user"""
 
     if not data.oauth_register_token and not data.password:
         raise NoLoginMethodError
-    if data.password and not OPEN_REGISTRATION and not admin:
-        raise RegistrationDisabledError
-    if data.oauth_register_token and not OPEN_OAUTH_REGISTRATION and not admin:
-        raise OAuthRegistrationDisabledError
+    if not admin:
+        if data.password and not OPEN_REGISTRATION:
+            raise RegistrationDisabledError
+        if data.oauth_register_token and not OPEN_OAUTH_REGISTRATION:
+            raise OAuthRegistrationDisabledError
+
+        if recaptcha_enabled() and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response)):
+            raise RecaptchaError
 
     if await db.exists(filter_by(models.User, name=data.name)):
         raise UserAlreadyExistsError
@@ -102,7 +116,10 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
     }
 
 
-@router.patch("/users/{user_id}", responses=user_responses(User, UserAlreadyExistsError))
+@router.patch(
+    "/users/{user_id}",
+    responses=admin_responses(User, UserNotFoundError, UserAlreadyExistsError, CannotDeleteLastLoginMethodError),
+)
 async def update_user(
     data: UpdateUser,
     user: models.User = get_user(models.User.sessions, models.User.oauth_connections, require_self_or_admin=True),
@@ -142,7 +159,7 @@ async def update_user(
     return user.serialize
 
 
-@router.post("/users/{user_id}/mfa", responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError))
+@router.post("/users/{user_id}/mfa", responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError))
 async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Generate mfa secret"""
 
@@ -155,7 +172,7 @@ async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True
 
 @router.put(
     "/users/{user_id}/mfa",
-    responses=user_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
+    responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
 )
 async def enable_mfa(
     code: str = Body(..., embed=True, regex=MFA_CODE_REGEX),
@@ -177,7 +194,7 @@ async def enable_mfa(
     return recovery_code
 
 
-@router.delete("/users/{user_id}/mfa", responses=user_responses(bool, UserNotFoundError, MFANotEnabledError))
+@router.delete("/users/{user_id}/mfa", responses=admin_responses(bool, UserNotFoundError, MFANotEnabledError))
 async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Disable mfa"""
 
@@ -190,7 +207,7 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) 
     return True
 
 
-@router.delete("/users/{user_id}", responses=user_responses(bool, PermissionDeniedError))
+@router.delete("/users/{user_id}", responses=admin_responses(bool, UserNotFoundError))
 async def delete_user(
     user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
     admin: bool = is_admin,

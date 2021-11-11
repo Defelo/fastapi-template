@@ -40,6 +40,7 @@ class CreateUser(BaseModel):
     name: str = Field(..., regex=USERNAME_REGEX)
     password: Optional[str] = Field(None, regex=PASSWORD_REGEX)
     oauth_register_token: Optional[str]
+    recaptcha_response: Optional[str]
     enabled: bool = True
     admin: bool = False
 

@@ -5,13 +5,21 @@ from datetime import timedelta, datetime
 from functools import wraps
 from typing import Callable, Awaitable, Optional, Any, cast, Type, TypeVar
 
+import aiohttp
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHash
 from pydantic import BaseModel, BaseConfig
 from pyotp import TOTP
 
-from .environment import HASH_TIME_COST, HASH_MEMORY_COST, JWT_SECRET, MFA_VALID_WINDOW
+from .environment import (
+    HASH_TIME_COST,
+    HASH_MEMORY_COST,
+    JWT_SECRET,
+    MFA_VALID_WINDOW,
+    RECAPTCHA_SECRET,
+    RECAPTCHA_SITEKEY,
+)
 from .redis import redis
 
 T = TypeVar("T")
@@ -64,10 +72,22 @@ async def check_mfa_code(code: str, secret: str) -> bool:
 
 
 def get_example(arg: Type[BaseModel]) -> dict[str, Any]:
-    # noinspection PyUnresolvedReferences
     return cast(dict[str, dict[str, Any]], arg.Config.schema_extra)["example"]
 
 
 def example(*args: Type[BaseModel], **kwargs: Any) -> Type[BaseConfig]:
     ex = dict(e for arg in args for e in get_example(arg).items())
     return cast(Type[BaseConfig], type("Config", (BaseConfig,), {"schema_extra": {"example": ex | kwargs}}))
+
+
+def recaptcha_enabled() -> bool:
+    return bool(RECAPTCHA_SECRET and RECAPTCHA_SITEKEY)
+
+
+async def check_recaptcha(response: str) -> bool:
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            "https://www.google.com/recaptcha/api/siteverify",
+            data={"secret": RECAPTCHA_SECRET, "response": response},
+        ) as resp:
+            return cast(bool, (await resp.json())["success"])

@@ -61,3 +61,9 @@ class OAuthRegistrationDisabledError(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = "OAuth Registration disabled"
     description = "OAuth Registration is disabled."
+
+
+class RecaptchaError(APIException):
+    status_code = status.HTTP_412_PRECONDITION_FAILED
+    detail = "Recaptcha failed"
+    description = "The ReCaptcha response is invalid."

@@ -31,6 +31,9 @@ HASH_TIME_COST = int(getenv("HASH_TIME_COST", "2"))
 HASH_MEMORY_COST = int(getenv("HASH_MEMORY_COST", "102400"))
 MFA_VALID_WINDOW: int = int(getenv("MFA_VALID_WINDOW", "1"))
 
+RECAPTCHA_SITEKEY: Optional[str] = getenv("RECAPTCHA_SITEKEY", None)
+RECAPTCHA_SECRET: Optional[str] = getenv("RECAPTCHA_SECRET", None)
+
 ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")
 
