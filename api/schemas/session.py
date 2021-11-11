@@ -26,6 +26,7 @@ class Login(BaseModel):
     password: str
     mfa_code: Optional[str] = ""
     recovery_code: Optional[str] = ""
+    recaptcha_response: Optional[str]
 
 
 class LoginResponse(BaseModel):

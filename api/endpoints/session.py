@@ -8,7 +8,7 @@ from .oauth import resolve_code
 from .. import models
 from ..auth import get_user, user_auth, admin_auth
 from ..database import db, filter_by
-from ..environment import OAUTH_REGISTER_TOKEN_TTL
+from ..environment import OAUTH_REGISTER_TOKEN_TTL, LOGIN_FAILS_BEFORE_CAPTCHA
 from ..exceptions import responses
 from ..exceptions.auth import user_responses, admin_responses
 from ..exceptions.oauth import ProviderNotFoundError, InvalidOAuthCodeError
@@ -18,31 +18,30 @@ from ..exceptions.session import (
     InvalidRefreshTokenError,
     UserDisabledError,
 )
-from ..exceptions.user import UserNotFoundError, InvalidCodeError
+from ..exceptions.user import UserNotFoundError, InvalidCodeError, RecaptchaError
 from ..models.session import SessionExpiredError
 from ..redis import redis
 from ..schemas.oauth import OAuthLogin
 from ..schemas.session import Login, LoginResponse, Session, OAuthLoginResponse
-from ..utils import check_mfa_code
+from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
 
 router = APIRouter(tags=["sessions"])
 
 
-async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: Optional[str]) -> None:
+async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: Optional[str]) -> bool:
     if not user.mfa_enabled or not user.mfa_secret:
-        return
+        return True
 
     if recovery_code:
         if hashlib.sha256(recovery_code.encode()).hexdigest() != user.mfa_recovery_code:
-            raise InvalidCodeError
+            return False
 
         user.mfa_secret = None
         user.mfa_enabled = False
         user.mfa_recovery_code = None
-        return
+        return True
 
-    if not mfa_code or not await check_mfa_code(mfa_code, user.mfa_secret):
-        raise InvalidCodeError
+    return mfa_code is not None and await check_mfa_code(mfa_code, user.mfa_secret)
 
 
 @router.get("/session", responses=user_responses(Session))
@@ -61,20 +60,33 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
 
 @router.post(
     "/sessions",
-    responses=responses(LoginResponse, InvalidCredentialsError, UserDisabledError, InvalidCodeError),
+    responses=responses(LoginResponse, RecaptchaError, InvalidCredentialsError, UserDisabledError, InvalidCodeError),
 )
 async def login(data: Login, request: Request) -> Any:
     """Create a new session"""
 
+    name_hash: str = hashlib.sha256(data.name.encode()).hexdigest()
+    failed_attempts = int(await redis.get(key := f"failed_login_attempts:{name_hash}") or "0")
+    if (
+        recaptcha_enabled()
+        and (0 <= LOGIN_FAILS_BEFORE_CAPTCHA <= failed_attempts)
+        and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response))
+    ):
+        raise RecaptchaError
+
     user: Optional[models.User] = await db.get(models.User, name=data.name)
     if not user or not await user.check_password(data.password):
+        await redis.incr(key)
         raise InvalidCredentialsError
+
+    if user.mfa_enabled and not await _check_mfa(user, data.mfa_code, data.recovery_code):
+        await redis.incr(key)
+        raise InvalidCodeError
+
+    await redis.delete(key)
 
     if not user.enabled:
         raise UserDisabledError
-
-    if user.mfa_enabled:
-        await _check_mfa(user, data.mfa_code, data.recovery_code)
 
     session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
     return {
