@@ -1,9 +1,9 @@
 import hashlib
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Query, Body, Request
 from pyotp import random_base32
-from sqlalchemy import asc
+from sqlalchemy import asc, func
 
 from .. import models
 from ..auth import get_user, admin_auth, is_admin, user_auth
@@ -33,16 +33,35 @@ router = APIRouter(tags=["users"])
 
 
 @router.get("/users", dependencies=[admin_auth], responses=admin_responses(UsersResponse))
-async def get_users(limit: int = Query(100, ge=1, le=100), offset: int = Query(0, ge=0)) -> Any:
+async def get_users(
+    limit: int = Query(100, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    name: Optional[str] = Query(None, max_length=256),
+    enabled: Optional[bool] = Query(None),
+    admin: Optional[bool] = Query(None),
+    mfa_enabled: Optional[bool] = Query(None),
+) -> Any:
     """Get all users"""
 
-    total: int = await db.count(select(models.User))
+    query = select(models.User)
+    order = []
+    if name:
+        query = query.where(func.lower(models.User.name).contains(name.lower(), autoescape=True))
+        order.append(asc(func.length(models.User.name)))
+    if enabled is not None:
+        query = query.where(models.User.enabled == enabled)
+    if admin is not None:
+        query = query.where(models.User.admin == admin)
+    if mfa_enabled is not None:
+        query = query.where(models.User.mfa_enabled == mfa_enabled)
+
+    total: int = await db.count(query)
     return {
         "total": total,
         "users": [
             user.serialize
             async for user in await db.stream(
-                select(models.User).order_by(asc(models.User.registration)).limit(limit).offset(offset),
+                query.order_by(*order, asc(models.User.registration)).limit(limit).offset(offset),
             )
         ],
     }
