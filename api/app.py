@@ -45,4 +45,9 @@ async def on_shutdown() -> None:
     pass
 
 
+@app.head("/status", tags=["status"])
+async def status() -> None:
+    pass
+
+
 app.include_router(test.router)
