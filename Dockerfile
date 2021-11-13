@@ -31,9 +31,9 @@ LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-templat
 WORKDIR /app
 
 RUN set -x \
-    && apk add --no-cache libpq~=13.4 \
+    && apk add --no-cache curl~=7.79 libpq~=13.4 \
     && addgroup -g 1000 api \
-    && adduser -G api -u 1000 -s /bin/bash -D -H api
+    && adduser -G api -u 1000 -s /bin/sh -D -H api
 
 USER api
 
@@ -43,5 +43,8 @@ COPY --from=builder /build/.venv/lib /usr/local/lib
 COPY --from=builder /build/VERSION /app/
 
 COPY api /app/api/
+
+HEALTHCHECK --interval=20s --timeout=5s --retries=1 \
+    CMD curl -fI http://localhost:${PORT:-8000}/status
 
 CMD ["python", "-m", "api"]
