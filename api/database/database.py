@@ -75,6 +75,8 @@ class Base(metaclass=DeclarativeMeta):
     registry = registry()
     metadata = registry.metadata
 
+    __table_args__ = {"mysql_collate": "utf8mb4_bin"}
+
     def __init__(self, **kwargs: Any) -> None:
         self.registry.constructor(self, **kwargs)
 

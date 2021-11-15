@@ -33,7 +33,7 @@ class Session(Base):
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
     user: User = relationship("User", back_populates="sessions")
-    device_name: Mapped[str] = Column(Text(collation="utf8mb4_bin"))
+    device_name: Mapped[str] = Column(Text)
     last_update: Mapped[datetime] = Column(DateTime)
     refresh_token: Mapped[str] = Column(String(64), unique=True)
 

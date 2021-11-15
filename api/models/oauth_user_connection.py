@@ -17,8 +17,8 @@ class OAuthUserConnection(Base):
     user_id: Mapped[str] = Column(String(36), ForeignKey("user.id"))
     user: User = relationship("User", back_populates="oauth_connections")
     provider_id: Mapped[str] = Column(String(64))
-    remote_user_id: Mapped[str] = Column(Text(collation="utf8mb4_bin"))
-    display_name: Mapped[Optional[str]] = Column(Text(collation="utf8mb4_bin"), nullable=True)
+    remote_user_id: Mapped[str] = Column(Text)
+    display_name: Mapped[Optional[str]] = Column(Text, nullable=True)
 
     @property
     def serialize(self) -> dict[str, Any]:
