@@ -4,8 +4,9 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING, Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, func
 from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy.sql import Select
 
 from ..database import db, select, Base
 from ..environment import ADMIN_USERNAME, ADMIN_PASSWORD
@@ -39,6 +40,10 @@ class User(Base):
         back_populates="user",
         cascade="all, delete",
     )
+
+    @staticmethod
+    def filter_by_name(name: str) -> Select:
+        return select(User).where(func.lower(User.name) == name.lower())
 
     @staticmethod
     async def create(name: str, password: Optional[str], enabled: bool, admin: bool) -> User:

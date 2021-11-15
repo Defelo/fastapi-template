@@ -101,7 +101,7 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
         if recaptcha_enabled() and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response)):
             raise RecaptchaError
 
-    if await db.exists(filter_by(models.User, name=data.name)):
+    if await db.exists(models.User.filter_by_name(data.name)):
         raise UserAlreadyExistsError
 
     if data.oauth_register_token:
@@ -150,7 +150,7 @@ async def update_user(
     if data.name is not None and data.name != user.name:
         if not admin:
             raise PermissionDeniedError
-        if await db.exists(filter_by(models.User, name=data.name)):
+        if await db.exists(models.User.filter_by_name(data.name).where(models.User.id != user.id)):
             raise UserAlreadyExistsError
 
         user.name = data.name

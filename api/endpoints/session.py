@@ -65,7 +65,7 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
 async def login(data: Login, request: Request) -> Any:
     """Create a new session"""
 
-    name_hash: str = hashlib.sha256(data.name.encode()).hexdigest()
+    name_hash: str = hashlib.sha256(data.name.lower().encode()).hexdigest()
     failed_attempts = int(await redis.get(key := f"failed_login_attempts:{name_hash}") or "0")
     if (
         recaptcha_enabled()
@@ -74,7 +74,7 @@ async def login(data: Login, request: Request) -> Any:
     ):
         raise RecaptchaError
 
-    user: Optional[models.User] = await db.get(models.User, name=data.name)
+    user: Optional[models.User] = await db.first(models.User.filter_by_name(data.name))
     if not user or not await user.check_password(data.password):
         await redis.incr(key)
         raise InvalidCredentialsError
