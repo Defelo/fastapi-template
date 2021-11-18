@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
-from .endpoints import test, user, session, oauth
+from .endpoints import test, user, session, oauth, recaptcha
 from .environment import ROOT_PATH, DEBUG
 from .logger import get_logger
 from .models import User, Session
@@ -74,4 +74,5 @@ async def status() -> None:
 app.include_router(user.router)
 app.include_router(session.router)
 app.include_router(oauth.router)
+app.include_router(recaptcha.router)
 app.include_router(test.router)
