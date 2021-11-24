@@ -6,7 +6,6 @@ from fastapi import FastAPI
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.logging import LoggingIntegration, ignore_logger
-from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from uvicorn.config import LOGGING_CONFIG
 from uvicorn.logging import DefaultFormatter
@@ -24,7 +23,6 @@ def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
         integrations=[
             AioHttpIntegration(),
             SqlalchemyIntegration(),
-            RedisIntegration(),
             LoggingIntegration(
                 level=logging.DEBUG,
                 event_level=logging.WARNING,

@@ -5,7 +5,7 @@ RUN apk add --no-cache \
     gcc~=10.3 \
     musl-dev~=1.2 \
     libffi-dev~=3.3 \
-    postgresql-dev~=13.4 \
+    postgresql-dev~=13.5 \
     git~=2.32
 
 WORKDIR /build
@@ -31,7 +31,7 @@ LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-templat
 WORKDIR /app
 
 RUN set -x \
-    && apk add --no-cache curl~=7.79 libpq~=13.4 \
+    && apk add --no-cache curl~=7.79 libpq~=13.5 \
     && addgroup -g 1000 api \
     && adduser -G api -u 1000 -s /bin/sh -D -H api
 
