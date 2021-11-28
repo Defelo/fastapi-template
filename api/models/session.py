@@ -47,7 +47,6 @@ class Session(Base):
             last_update=datetime.utcnow(),
             refresh_token=_hash_token(refresh_token),
         )
-        print(session.id)
         await db.add(session)
         return session, session._generate_access_token(), refresh_token
 
