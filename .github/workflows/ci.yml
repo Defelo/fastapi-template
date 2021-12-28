@@ -5,7 +5,7 @@ on:
   - pull_request
 
 env:
-  PYTHON_VERSION: 3.9
+  PYTHON_VERSION: "3.10"
   IMAGE_NAME: defelo/fastapi-template
   GHCR_NAME: defelo/fastapi-template
 
@@ -21,7 +21,7 @@ jobs:
           submodules: recursive
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.3.1
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -44,7 +44,7 @@ jobs:
           submodules: recursive
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v2.3.1
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -171,7 +171,7 @@ jobs:
           docker save $(echo $TAGS | tr , ' ') | gzip > $name
 
       - name: Upload Docker Image Archive
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2.3.1
         with:
           name: ${{ steps.archive.outputs.name }}
           path: ${{ steps.archive.outputs.name }}
@@ -185,7 +185,7 @@ jobs:
 
     steps:
       - name: Download Docker Image Archive
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v2.1.0
 
       - name: Login to DockerHub
         id: login_dockerhub
