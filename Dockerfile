@@ -1,16 +1,16 @@
-FROM python:3.9.7-alpine AS builder
+FROM python:3.10-alpine AS builder
 
 RUN apk add --no-cache \
     build-base~=0.5 \
     gcc~=10.3 \
     musl-dev~=1.2 \
-    libffi-dev~=3.3 \
-    postgresql-dev~=13.5 \
-    git~=2.32
+    libffi-dev~=3.4 \
+    postgresql14-dev~=14.1 \
+    git~=2.34
 
 WORKDIR /build
 
-RUN pip install pipenv==2020.11.15
+RUN pip install pipenv==2021.11.23
 
 COPY Pipfile /build/
 COPY Pipfile.lock /build/
@@ -24,14 +24,14 @@ COPY .git /build/.git/
 RUN python version.py
 
 
-FROM python:3.9.7-alpine
+FROM python:3.10-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-template"
 
 WORKDIR /app
 
 RUN set -x \
-    && apk add --no-cache curl~=7.79 libpq~=13.5 \
+    && apk add --no-cache curl~=7.80 libpq~=14.1 \
     && addgroup -g 1000 api \
     && adduser -G api -u 1000 -s /bin/sh -D -H api
 
