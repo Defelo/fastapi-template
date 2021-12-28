@@ -38,7 +38,7 @@ def run_in_thread(func: Callable[..., T]) -> Callable[..., Awaitable[T]]:
 
 @run_in_thread
 def hash_password(password: str) -> str:
-    return cast(str, password_hasher.hash(password))
+    return password_hasher.hash(password)
 
 
 @run_in_thread
