@@ -105,12 +105,7 @@ class DB:
 
         self.engine: AsyncEngine = create_async_engine(
             URL.create(
-                drivername=driver,
-                username=username,
-                password=password,
-                host=host,
-                port=port,
-                database=database,
+                drivername=driver, username=username, password=password, host=host, port=port, database=database
             ),
             pool_pre_ping=True,
             pool_recycle=pool_recycle,

@@ -4,14 +4,15 @@ RUN apk add --no-cache build-base gcc musl-dev libffi-dev postgresql14-dev git
 
 WORKDIR /build
 
-RUN pip install pipenv
+RUN pip install poetry
 
-COPY Pipfile /build/
-COPY Pipfile.lock /build/
+COPY pyproject.toml /build/
+COPY poetry.lock /build/
 
-ARG PIPENV_NOSPIN=true
-ARG PIPENV_VENV_IN_PROJECT=true
-RUN pipenv install --deploy --ignore-pipfile
+RUN set -ex \
+    && virtualenv .venv \
+    && . .venv/bin/activate \
+    && poetry install -n --no-root --no-dev
 
 COPY api/version.py /build/
 COPY .git /build/.git/

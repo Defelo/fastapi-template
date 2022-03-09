@@ -23,10 +23,7 @@ def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
         integrations=[
             AioHttpIntegration(),
             SqlalchemyIntegration(),
-            LoggingIntegration(
-                level=logging.DEBUG,
-                event_level=logging.WARNING,
-            ),
+            LoggingIntegration(level=logging.DEBUG, event_level=logging.WARNING),
         ],
         release=f"{name}@{version}",
     )

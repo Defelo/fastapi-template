@@ -25,9 +25,6 @@ def responses(default: type, *args: Type[APIException]) -> dict[Union[int, str],
             name = exc.__name__ if len(excs) == 1 else f"{exc.__name__} ({i + 1}/{len(excs)})"
             examples[name] = {"description": exc.description, "value": {"detail": exc.detail}}
 
-        out[code] = {
-            "description": STATUS_PHRASES[code],
-            "content": {"application/json": {"examples": examples}},
-        }
+        out[code] = {"description": STATUS_PHRASES[code], "content": {"application/json": {"examples": examples}}}
 
     return out | {200: {"model": default}}
