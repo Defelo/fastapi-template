@@ -19,7 +19,7 @@ pydantic = "*"
 
 [dev-packages]
 flake8 = "*"
-black = "==21.12b0"
+black = "*"
 wemake-python-styleguide = "*"
 mypy = "*"
 sqlalchemy = {extras = ["mypy"], version = "*"}
