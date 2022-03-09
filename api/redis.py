@@ -10,7 +10,5 @@ logger = get_logger(__name__)
 # global redis connection
 logger.debug("initializing redis connection")
 redis: Redis = cast(Callable[..., Redis], from_url)(
-    f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
-    encoding="utf-8",
-    decode_responses=True,
+    f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}", encoding="utf-8", decode_responses=True
 )

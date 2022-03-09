@@ -22,18 +22,11 @@ class OAuthUserConnection(Base):
 
     @property
     def serialize(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "provider_id": self.provider_id,
-            "display_name": self.display_name,
-        }
+        return {"id": self.id, "provider_id": self.provider_id, "display_name": self.display_name}
 
     @staticmethod
     async def create(
-        user_id: str,
-        provider_id: str,
-        remote_user_id: str,
-        display_name: Optional[str],
+        user_id: str, provider_id: str, remote_user_id: str, display_name: Optional[str]
     ) -> OAuthUserConnection:
         row = OAuthUserConnection(
             id=str(uuid4()),

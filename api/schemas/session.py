@@ -39,8 +39,7 @@ class LoginResponse(BaseModel):
         user=get_example(User),
         session=get_example(Session),
         access_token=jwt.encode(
-            {"user_id": get_example(User)["id"], "session_id": get_example(Session)["id"], "exp": 0},
-            "secret",
+            {"user_id": get_example(User)["id"], "session_id": get_example(Session)["id"], "exp": 0}, "secret"
         ),
         refresh_token="KN4nF8BsiElQi_OoDYQ2BgVdhVirhTw67vOzfHutjONvazRXLsboZ__UG-oI-II3LoMNv9tgd6YBGYRGxNK7Ug",
     )

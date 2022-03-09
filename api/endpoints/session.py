@@ -132,14 +132,12 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
             "session": session.serialize,
             "access_token": access_token,
             "refresh_token": refresh_token,
-        },
+        }
     }
 
 
 @router.post(
-    "/sessions/{user_id}",
-    dependencies=[admin_auth],
-    responses=admin_responses(LoginResponse, UserNotFoundError),
+    "/sessions/{user_id}", dependencies=[admin_auth], responses=admin_responses(LoginResponse, UserNotFoundError)
 )
 async def impersonate(request: Request, user: models.User = get_user()) -> Any:
     """Impersonate a specific user"""
@@ -187,8 +185,7 @@ async def logout(user: models.User = get_user(models.User.sessions, require_self
 
 
 @router.delete(
-    "/sessions/{user_id}/{session_id}",
-    responses=admin_responses(bool, UserNotFoundError, SessionNotFoundError),
+    "/sessions/{user_id}/{session_id}", responses=admin_responses(bool, UserNotFoundError, SessionNotFoundError)
 )
 async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Delete a specific session of a given user"""

@@ -61,7 +61,7 @@ async def get_users(
         "users": [
             user.serialize
             async for user in await db.stream(
-                query.order_by(*order, asc(models.User.registration)).limit(limit).offset(offset),
+                query.order_by(*order, asc(models.User.registration)).limit(limit).offset(offset)
             )
         ],
     }
@@ -117,7 +117,7 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
         await redis.delete(key1, key2, key3)
 
         if await db.exists(
-            filter_by(models.OAuthUserConnection, provider_id=provider_id, remote_user_id=remote_user_id),
+            filter_by(models.OAuthUserConnection, provider_id=provider_id, remote_user_id=remote_user_id)
         ):
             raise RemoteAlreadyLinkedError
 
@@ -194,8 +194,7 @@ async def initialize_mfa(user: models.User = get_user(require_self_or_admin=True
     responses=admin_responses(str, UserNotFoundError, MFAAlreadyEnabledError, MFANotInitializedError, InvalidCodeError),
 )
 async def enable_mfa(
-    code: str = Body(..., embed=True, regex=MFA_CODE_REGEX),
-    user: models.User = get_user(require_self_or_admin=True),
+    code: str = Body(..., embed=True, regex=MFA_CODE_REGEX), user: models.User = get_user(require_self_or_admin=True)
 ) -> Any:
     """Enable mfa and generate recovery code"""
 
@@ -228,8 +227,7 @@ async def disable_mfa(user: models.User = get_user(require_self_or_admin=True)) 
 
 @router.delete("/users/{user_id}", responses=admin_responses(bool, UserNotFoundError))
 async def delete_user(
-    user: models.User = get_user(models.User.sessions, require_self_or_admin=True),
-    admin: bool = is_admin,
+    user: models.User = get_user(models.User.sessions, require_self_or_admin=True), admin: bool = is_admin
 ) -> Any:
     """Delete a user"""
 

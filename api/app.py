@@ -22,11 +22,7 @@ app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT
 
 if DEBUG:
     app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
     )
 
 

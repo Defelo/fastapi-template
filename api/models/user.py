@@ -36,9 +36,7 @@ class User(Base):
     mfa_recovery_code: Mapped[Optional[str]] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
-        "OAuthUserConnection",
-        back_populates="user",
-        cascade="all, delete",
+        "OAuthUserConnection", back_populates="user", cascade="all, delete"
     )
 
     @staticmethod

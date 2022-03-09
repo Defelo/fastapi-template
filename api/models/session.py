@@ -61,8 +61,7 @@ class Session(Base):
 
     def _generate_access_token(self) -> str:
         return encode_jwt(
-            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token},
-            timedelta(seconds=ACCESS_TOKEN_TTL),
+            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token}, timedelta(seconds=ACCESS_TOKEN_TTL)
         )
 
     @staticmethod
@@ -97,5 +96,5 @@ class Session(Base):
     @staticmethod
     async def clean_expired_sessions() -> None:
         await db.exec(
-            delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)),
+            delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL))
         )

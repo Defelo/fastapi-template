@@ -1,23 +1,18 @@
 FROM python:3.10-alpine AS builder
 
-RUN apk add --no-cache \
-    build-base~=0.5 \
-    gcc~=10.3 \
-    musl-dev~=1.2 \
-    libffi-dev~=3.4 \
-    postgresql14-dev~=14.1 \
-    git~=2.34
+RUN apk add --no-cache build-base gcc musl-dev libffi-dev postgresql14-dev git
 
 WORKDIR /build
 
-RUN pip install pipenv==2021.11.23
+RUN pip install poetry
 
-COPY Pipfile /build/
-COPY Pipfile.lock /build/
+COPY pyproject.toml /build/
+COPY poetry.lock /build/
 
-ARG PIPENV_NOSPIN=true
-ARG PIPENV_VENV_IN_PROJECT=true
-RUN pipenv install --deploy --ignore-pipfile
+RUN set -ex \
+    && virtualenv .venv \
+    && . .venv/bin/activate \
+    && poetry install -n --no-root --no-dev
 
 COPY api/version.py /build/
 COPY .git /build/.git/
@@ -31,7 +26,7 @@ LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-templat
 WORKDIR /app
 
 RUN set -x \
-    && apk add --no-cache curl~=7.80 libpq~=14.1 \
+    && apk add --no-cache curl libpq \
     && addgroup -g 1000 api \
     && adduser -G api -u 1000 -s /bin/sh -D -H api
 

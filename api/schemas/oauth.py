@@ -10,11 +10,7 @@ class OAuthProvider(BaseModel):
     name: str
     authorize_url: str
 
-    Config = example(
-        id="github",
-        name="GitHub",
-        authorize_url="https://github.com/login/oauth/authorize",
-    )
+    Config = example(id="github", name="GitHub", authorize_url="https://github.com/login/oauth/authorize")
 
 
 class OAuthConnection(BaseModel):

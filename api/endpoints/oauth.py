@@ -56,8 +56,7 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, Optional[str]]:
         return x.format(access_token=access_token)
 
     async with ClientSession() as session, session.get(
-        fmt(provider.userinfo_url),
-        headers=dict(parse_qsl(fmt(provider.userinfo_headers))),
+        fmt(provider.userinfo_url), headers=dict(parse_qsl(fmt(provider.userinfo_headers)))
     ) as response:
         if response.status != 200:
             raise InvalidOAuthCodeError
@@ -86,7 +85,7 @@ async def get_oauth_providers() -> Any:
 
 @router.get("/oauth/links/{user_id}", responses=admin_responses(list[OAuthConnection], UserNotFoundError))
 async def get_oauth_connections(
-    user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),
+    user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True)
 ) -> Any:
     """Get oauth connections"""
 
@@ -96,11 +95,7 @@ async def get_oauth_connections(
 @router.post(
     "/oauth/links/{user_id}",
     responses=admin_responses(
-        OAuthConnection,
-        UserNotFoundError,
-        RemoteAlreadyLinkedError,
-        ProviderNotFoundError,
-        InvalidOAuthCodeError,
+        OAuthConnection, UserNotFoundError, RemoteAlreadyLinkedError, ProviderNotFoundError, InvalidOAuthCodeError
     ),
 )
 async def create_oauth_connection(login: OAuthLogin, user: models.User = get_user(require_self_or_admin=True)) -> Any:
@@ -121,8 +116,7 @@ async def create_oauth_connection(login: OAuthLogin, user: models.User = get_use
     responses=admin_responses(bool, UserNotFoundError, CannotDeleteLastLoginMethodError, ConnectionNotFoundError),
 )
 async def delete_oauth_connection(
-    connection_id: str,
-    user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True),
+    connection_id: str, user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True)
 ) -> Any:
     """Delete an oauth connection"""
 
