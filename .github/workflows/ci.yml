@@ -105,7 +105,7 @@ jobs:
           poetry install -n --no-root
 
       - name: Run unit tests with coverage
-        run: poe coverage --no-clean
+        run: poe coverage --xml
 
       - name: Send coverage report to codeclimate
         env:
