@@ -42,7 +42,7 @@ shell = """
 coverage run --branch --source=api -m unittest discover -v tests \
 && coverage report \
 && test $html && coverage html && xdg-open htmlcov/index.html; \
-test $clean = True && coverage erase"""
+test $clean = True && coverage erase || true"""
 
     [tool.poe.tasks.coverage.args.html]
     options = ["--html"]
