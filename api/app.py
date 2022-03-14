@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import db
-from .endpoints import test
+from .endpoints import ROUTERS
 from .environment import ROOT_PATH, DEBUG
 from .logger import get_logger
 from .version import get_version
@@ -15,10 +15,15 @@ logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
 
-if DEBUG:
-    app.add_middleware(
-        CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
-    )
+
+def setup_app() -> None:
+    if DEBUG:
+        app.add_middleware(
+            CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+        )
+
+    for router in ROUTERS:
+        app.include_router(router)
 
 
 @app.middleware("http")
@@ -44,6 +49,3 @@ async def on_shutdown() -> None:
 @app.head("/status", tags=["status"])
 async def status() -> None:
     pass
-
-
-app.include_router(test.router)
