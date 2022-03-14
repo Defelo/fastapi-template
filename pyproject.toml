@@ -25,7 +25,7 @@ flake8 = "^4.0.1"
 bandit = "1.7.2"
 black = "^22.1.0"
 wemake-python-styleguide = "^0.16.1"
-mypy = "^0.940"
+mypy = "^0.941"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.32" }
 coverage = "^6.3.2"
 
