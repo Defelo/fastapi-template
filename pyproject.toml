@@ -28,6 +28,7 @@ wemake-python-styleguide = "^0.16.1"
 mypy = "^0.941"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.32" }
 coverage = "^6.3.2"
+parameterized = "^0.8.1"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
