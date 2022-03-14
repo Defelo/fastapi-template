@@ -1,12 +1,12 @@
-import unittest
 from typing import Any, Callable
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch, MagicMock
 
 from api import app
 from utils import mock_list, import_module, AsyncMock
 
 
-class MyTestCase(unittest.IsolatedAsyncioTestCase):
+class TestApp(IsolatedAsyncioTestCase):
     def get_decorated_function(
         self, fastapi_patch: MagicMock, decorator_name: str, *decorator_args: Any, **decorator_kwargs: Any
     ) -> tuple[Any, Callable[..., Any]]:
