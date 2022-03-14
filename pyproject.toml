@@ -37,6 +37,7 @@ black = "black ."
 mypy = "mypy ."
 lint = ["black", "mypy", "flake8"]
 test = "python -m unittest discover -v tests"
+pre-commit = ["lint", "test"]
 
 [tool.poe.tasks.coverage]
 shell = """
