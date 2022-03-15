@@ -36,13 +36,13 @@ flake8 = "flake8 . --count --statistics --show-source"
 black = "black ."
 mypy = "mypy ."
 lint = ["black", "mypy", "flake8"]
-test = "python -m unittest discover -v tests"
+test = { shell = "PYTHONWARNINGS=ignore python -m unittest discover -v tests", interpreter = "bash" }
 pre-commit = ["lint", "test"]
 
 [tool.poe.tasks.coverage]
 shell = """
 set -e
-coverage run --branch --source=api -m unittest discover -v tests
+PYTHONWARNINGS=ignore coverage run --branch --source=api -m unittest discover -v tests
 coverage report
 if [[ "$xml" = True ]]; then coverage xml; fi
 if [[ "$html" = True ]]; then coverage html && xdg-open htmlcov/index.html; fi
@@ -50,18 +50,18 @@ if [[ "$clean" = True ]]; then coverage erase; fi
 """
 interpreter = "bash"
 
-    [tool.poe.tasks.coverage.args.xml]
-    options = ["--xml"]
-    type = "boolean"
+[tool.poe.tasks.coverage.args.xml]
+options = ["--xml"]
+type = "boolean"
 
-    [tool.poe.tasks.coverage.args.html]
-    options = ["--html"]
-    type = "boolean"
+[tool.poe.tasks.coverage.args.html]
+options = ["--html"]
+type = "boolean"
 
-    [tool.poe.tasks.coverage.args.clean]
-    options = ["--no-clean"]
-    type = "boolean"
-    default = true
+[tool.poe.tasks.coverage.args.clean]
+options = ["--no-clean"]
+type = "boolean"
+default = true
 
 [tool.black]
 target-version = ["py310"]
@@ -74,7 +74,7 @@ ignore_missing_imports = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [tool.coverage.run]
-omit = [ "api/__main__.py", "tests/*" ]
+omit = ["api/__main__.py", "tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
