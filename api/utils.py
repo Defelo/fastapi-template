@@ -1,4 +1,4 @@
-from typing import Any, cast, Type, Union
+from typing import Any, cast, Type
 
 from pydantic import BaseModel, BaseConfig
 from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
@@ -6,12 +6,12 @@ from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 from api.exceptions.api_exception import APIException
 
 
-def responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
+def responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
     exceptions: dict[int, list[Type[APIException]]] = {}
     for exc in args:
         exceptions.setdefault(exc.status_code, []).append(exc)
 
-    out: dict[Union[int, str], dict[str, Any]] = {}
+    out: dict[int | str, dict[str, Any]] = {}
     for code, excs in exceptions.items():
         examples = {}
         for i, exc in enumerate(excs):

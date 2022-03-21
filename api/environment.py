@@ -1,5 +1,4 @@
 from os import getenv
-from typing import Optional
 
 
 def get_bool(key: str, default: bool) -> bool:
@@ -34,4 +33,4 @@ REDIS_HOST = getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(getenv("REDIS_DB", "0"))
 
-SENTRY_DSN: Optional[str] = getenv("SENTRY_DSN")  # sentry data source name
+SENTRY_DSN: str | None = getenv("SENTRY_DSN")  # sentry data source name
