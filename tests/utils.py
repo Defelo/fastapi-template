@@ -1,8 +1,26 @@
 import importlib
 import runpy
 import sys
-from typing import Any
+from typing import Any, cast
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
+
+from fastapi import APIRouter
+from fastapi.routing import APIRoute
+
+
+class EndpointsTestCase(IsolatedAsyncioTestCase):
+    ROUTER: APIRouter
+
+    def get_route(self, method: str, path: str) -> APIRoute:
+        routes = [
+            route
+            for route in cast(list[APIRoute], self.ROUTER.routes)
+            if method in route.methods and route.path == path
+        ]
+        self.failIf(not routes, f"Route {method} {path} not found!")
+        self.failIf(len(routes) > 1, f"There is more than one {method} {path} route!")
+        return routes[0]
 
 
 class AsyncMock(MagicMock):
