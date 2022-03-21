@@ -2,9 +2,8 @@ from typing import Any, Optional, cast
 
 from fastapi import APIRouter
 
-from api.environment import RECAPTCHA_SITEKEY
-from api.exceptions import responses
-from api.utils import recaptcha_enabled
+from ..environment import RECAPTCHA_SITEKEY
+from ..utils import recaptcha_enabled, responses
 
 router = APIRouter(tags=["recaptcha"])
 

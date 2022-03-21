@@ -11,6 +11,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHash
 from pydantic import BaseModel, BaseConfig
 from pyotp import TOTP
+from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 
 from .environment import (
     HASH_TIME_COST,
@@ -20,6 +21,7 @@ from .environment import (
     RECAPTCHA_SECRET,
     RECAPTCHA_SITEKEY,
 )
+from .exceptions.api_exception import APIException
 from .redis import redis
 
 T = TypeVar("T")
@@ -69,6 +71,23 @@ async def check_mfa_code(code: str, secret: str) -> bool:
 
     await redis.setex(key, 30 * (2 * MFA_VALID_WINDOW + 2), 1)
     return True
+
+
+def responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
+    exceptions: dict[int, list[Type[APIException]]] = {}
+    for exc in args:
+        exceptions.setdefault(exc.status_code, []).append(exc)
+
+    out: dict[int | str, dict[str, Any]] = {}
+    for code, excs in exceptions.items():
+        examples = {}
+        for i, exc in enumerate(excs):
+            name = exc.__name__ if len(excs) == 1 else f"{exc.__name__} ({i + 1}/{len(excs)})"
+            examples[name] = {"description": exc.description, "value": {"detail": exc.detail}}
+
+        out[code] = {"description": STATUS_PHRASES[code], "content": {"application/json": {"examples": examples}}}
+
+    return out | {200: {"model": default}}
 
 
 def get_example(arg: Type[BaseModel]) -> dict[str, Any]:

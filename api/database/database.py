@@ -1,6 +1,6 @@
 from asyncio import Event
 from contextvars import ContextVar
-from typing import TypeVar, Optional, Type, Any, cast, AsyncIterator
+from typing import TypeVar, Type, Any, cast, AsyncIterator
 
 # noinspection PyProtectedMember
 from sqlalchemy import Column
@@ -116,8 +116,8 @@ class DB:
             echo=echo,
         )
 
-        self._session: ContextVar[Optional[AsyncSession]] = ContextVar("session", default=None)
-        self._close_event: ContextVar[Optional[Event]] = ContextVar("close_event", default=None)
+        self._session: ContextVar[AsyncSession | None] = ContextVar("session", default=None)
+        self._close_event: ContextVar[Event | None] = ContextVar("close_event", default=None)
 
     async def create_tables(self) -> None:
         """Create all tables defined in enabled cog packages."""
@@ -163,7 +163,7 @@ class DB:
 
         return [x async for x in await self.stream(statement)]
 
-    async def first(self, statement: Executable) -> Optional[Any]:
+    async def first(self, statement: Executable) -> Any | None:
         """Execute an sql statement and return the first result."""
 
         return (await self.exec(statement)).scalar()
@@ -178,7 +178,7 @@ class DB:
 
         return cast(int, await self.first(select(count()).select_from(statement, *args)))
 
-    async def get(self, cls: Type[T], *args: Column[Any], **kwargs: Any) -> Optional[T]:
+    async def get(self, cls: Type[T], *args: Column[Any], **kwargs: Any) -> T | None:
         """Shortcut for first(filter_by(...))"""
 
         return await self.first(filter_by(cls, *args, **kwargs))

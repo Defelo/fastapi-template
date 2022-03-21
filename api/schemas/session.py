@@ -35,7 +35,7 @@ class LoginResponse(BaseModel):
     access_token: str
     refresh_token: str
 
-    Config = example(
+    Config = example(  # noqa: S106
         user=get_example(User),
         session=get_example(Session),
         access_token=jwt.encode(

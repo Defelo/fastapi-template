@@ -8,9 +8,9 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
-from .endpoints import test, user, session, oauth, recaptcha
-from .environment import ROOT_PATH, DEBUG
-from .logger import get_logger
+from .endpoints import ROUTERS
+from .environment import ROOT_PATH, DEBUG, SENTRY_DSN
+from .logger import get_logger, setup_sentry
 from .models import User, Session
 from .version import get_version
 
@@ -20,10 +20,19 @@ logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
 
-if DEBUG:
-    app.add_middleware(
-        CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
-    )
+
+def setup_app() -> None:
+    if SENTRY_DSN:
+        logger.debug("initializing sentry")
+        setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
+
+    if DEBUG:
+        app.add_middleware(
+            CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+        )
+
+    for router in ROUTERS:
+        app.include_router(router)
 
 
 @app.middleware("http")
@@ -50,6 +59,8 @@ async def clean_expired_sessions_loop() -> None:
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    setup_app()
+
     await db.create_tables()
     asyncio.create_task(clean_expired_sessions_loop())
 
@@ -65,10 +76,3 @@ async def on_shutdown() -> None:
 @app.head("/status", tags=["status"])
 async def status() -> None:
     pass
-
-
-app.include_router(user.router)
-app.include_router(session.router)
-app.include_router(oauth.router)
-app.include_router(recaptcha.router)
-app.include_router(test.router)

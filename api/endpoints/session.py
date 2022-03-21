@@ -9,7 +9,6 @@ from .. import models
 from ..auth import get_user, user_auth, admin_auth
 from ..database import db, filter_by
 from ..environment import OAUTH_REGISTER_TOKEN_TTL, LOGIN_FAILS_BEFORE_CAPTCHA
-from ..exceptions import responses
 from ..exceptions.auth import user_responses, admin_responses
 from ..exceptions.oauth import ProviderNotFoundError, InvalidOAuthCodeError
 from ..exceptions.session import (
@@ -23,7 +22,7 @@ from ..models.session import SessionExpiredError
 from ..redis import redis
 from ..schemas.oauth import OAuthLogin
 from ..schemas.session import Login, LoginResponse, Session, OAuthLoginResponse
-from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
+from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled, responses
 
 router = APIRouter(tags=["sessions"])
 

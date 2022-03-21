@@ -17,7 +17,7 @@ aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.32"
 aiomysql = "^0.0.22"
 asyncpg = "^0.25.0"
-sentry-sdk = "^1.5.7"
+sentry-sdk = "^1.5.8"
 pydantic = "^1.9.0"
 argon2-cffi = "^21.3.0"
 PyJWT = "^2.3.0"
@@ -27,18 +27,45 @@ jq = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
-bandit = "1.7.2"
 black = "^22.1.0"
-wemake-python-styleguide = "^0.16.0"
-mypy = "^0.931"
-SQLAlchemy = {extras = ["mypy"], version = "^1.4.32"}
+wemake-python-styleguide = "^0.16.1"
+mypy = "^0.941"
+SQLAlchemy = { extras = ["mypy"], version = "^1.4.32" }
+coverage = "^6.3.2"
+parameterized = "^0.8.1"
 
 [tool.poe.tasks]
-api = {script = "api.main:main", envfile = ".env"}
+api = { script = "api.main:main", envfile = ".env" }
 flake8 = "flake8 . --count --statistics --show-source"
 black = "black ."
 mypy = "mypy ."
 lint = ["black", "mypy", "flake8"]
+test = { shell = "PYTHONWARNINGS=ignore python -m unittest discover -v tests", interpreter = "bash" }
+pre-commit = ["lint", "test"]
+
+[tool.poe.tasks.coverage]
+shell = """
+set -e
+PYTHONWARNINGS=ignore coverage run --branch --source=api -m unittest discover -v tests
+coverage report
+if [[ "$xml" = True ]]; then coverage xml; fi
+if [[ "$html" = True ]]; then coverage html && xdg-open htmlcov/index.html; fi
+if [[ "$clean" = True ]]; then coverage erase; fi
+"""
+interpreter = "bash"
+
+[tool.poe.tasks.coverage.args.xml]
+options = ["--xml"]
+type = "boolean"
+
+[tool.poe.tasks.coverage.args.html]
+options = ["--html"]
+type = "boolean"
+
+[tool.poe.tasks.coverage.args.clean]
+options = ["--no-clean"]
+type = "boolean"
+default = true
 
 [tool.black]
 target-version = ["py310"]
@@ -49,6 +76,9 @@ skip-magic-trailing-comma = true
 strict = true
 ignore_missing_imports = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+[tool.coverage.run]
+omit = ["api/__main__.py", "tests/*"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

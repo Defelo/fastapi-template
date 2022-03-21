@@ -85,6 +85,39 @@ jobs:
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.github_token }}
 
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup poetry
+        run: |
+          pip install poetry poethepoet
+          poetry install -n --no-root
+
+      - name: Run unit tests with coverage
+        run: poe coverage --xml
+
+      - name: Send coverage report to codeclimate
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
+        if: ${{ env.CC_TEST_REPORTER_ID != null }}
+        run: |
+          set -ex
+
+          wget -O reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
+          chmod +x reporter
+          ./reporter after-build
+
   docker_build:
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository }}
     runs-on: ubuntu-latest
@@ -155,7 +188,7 @@ jobs:
           echo ::set-output name=tags::${out:1}
 
       - name: Build
-        uses: docker/build-push-action@v2.9.0
+        uses: docker/build-push-action@v2.10.0
         with:
           push: false
           load: true
@@ -191,7 +224,7 @@ jobs:
 
   docker_push:
     if: "false" # ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' }}
-    needs: [ codestyle, mypy, linter, docker_build ]
+    needs: [ codestyle, mypy, linter, tests, docker_build ]
     environment: docker
     runs-on: ubuntu-latest
 

@@ -2,8 +2,8 @@ from typing import Type, Union, Any
 
 from fastapi import status
 
-from . import responses
 from .api_exception import APIException
+from ..utils import responses
 
 
 class InvalidTokenError(APIException):

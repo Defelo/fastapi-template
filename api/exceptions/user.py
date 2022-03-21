@@ -1,6 +1,6 @@
 from fastapi import status
 
-from api.exceptions.api_exception import APIException
+from .api_exception import APIException
 
 
 class UserNotFoundError(APIException):

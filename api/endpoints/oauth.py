@@ -8,7 +8,6 @@ from .. import models
 from ..auth import get_user
 from ..database import db, filter_by
 from ..environment import OAUTH_PROVIDERS
-from ..exceptions import responses
 from ..exceptions.auth import admin_responses
 from ..exceptions.oauth import (
     ProviderNotFoundError,
@@ -18,6 +17,7 @@ from ..exceptions.oauth import (
 )
 from ..exceptions.user import CannotDeleteLastLoginMethodError, UserNotFoundError
 from ..schemas.oauth import OAuthLogin, OAuthProvider, OAuthConnection
+from ..utils import responses
 
 router = APIRouter(tags=["oauth"])
 

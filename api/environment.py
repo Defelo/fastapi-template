@@ -3,7 +3,6 @@ import re
 import secrets
 from collections import namedtuple
 from os import getenv
-from typing import Optional
 
 import jq
 
@@ -32,8 +31,8 @@ HASH_MEMORY_COST = int(getenv("HASH_MEMORY_COST", "102400"))
 MFA_VALID_WINDOW: int = int(getenv("MFA_VALID_WINDOW", "1"))
 LOGIN_FAILS_BEFORE_CAPTCHA = int(getenv("LOGIN_FAILS_BEFORE_CAPTCHA", "3"))
 
-RECAPTCHA_SITEKEY: Optional[str] = getenv("RECAPTCHA_SITEKEY", None)
-RECAPTCHA_SECRET: Optional[str] = getenv("RECAPTCHA_SECRET", None)
+RECAPTCHA_SITEKEY: str | None = getenv("RECAPTCHA_SITEKEY", None)
+RECAPTCHA_SECRET: str | None = getenv("RECAPTCHA_SECRET", None)
 
 ADMIN_USERNAME = getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = getenv("ADMIN_PASSWORD", "admin")
@@ -58,7 +57,7 @@ REDIS_HOST = getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(getenv("REDIS_DB", "0"))
 
-SENTRY_DSN: Optional[str] = getenv("SENTRY_DSN")  # sentry data source name
+SENTRY_DSN: str | None = getenv("SENTRY_DSN")  # sentry data source name
 
 OAuthProvider = namedtuple(
     "OAuthProvider",
