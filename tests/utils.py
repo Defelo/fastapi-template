@@ -8,9 +8,15 @@ from unittest.mock import MagicMock
 from fastapi import APIRouter
 from fastapi.routing import APIRoute
 
+from api.endpoints import ROUTERS
+
 
 class EndpointsTestCase(IsolatedAsyncioTestCase):
     ROUTER: APIRouter
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        assert cls.ROUTER in ROUTERS, "Router is not registered!"
 
     def get_route(self, method: str, path: str) -> APIRoute:
         routes = [
