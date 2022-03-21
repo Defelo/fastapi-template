@@ -112,6 +112,8 @@ class TestApp(IsolatedAsyncioTestCase):
     ) -> None:
         module, on_startup = self.get_decorated_function(fastapi_patch, "on_event", "startup")
         db_patch.create_tables = AsyncMock()
+        _setup_app = module.setup_app
+        module.setup_app = MagicMock()
         clean_expired_sessions_loop = module.clean_expired_sessions_loop = MagicMock()
 
         events = []
@@ -125,12 +127,16 @@ class TestApp(IsolatedAsyncioTestCase):
 
         module.db_context = context_manager
 
-        await on_startup()
+        try:
+            await on_startup()
 
-        db_patch.create_tables.assert_called_once_with()
-        clean_expired_sessions_loop.assert_called_once_with()
-        create_task_patch.assert_called_once_with(clean_expired_sessions_loop())
-        self.assertEqual([0, 1, 2], events)
+            module.setup_app.assert_called_once_with()
+            db_patch.create_tables.assert_called_once_with()
+            clean_expired_sessions_loop.assert_called_once_with()
+            create_task_patch.assert_called_once_with(clean_expired_sessions_loop())
+            self.assertEqual([0, 1, 2], events)
+        finally:
+            module.setup_app = _setup_app
 
     @patch("fastapi.FastAPI")
     async def test__on_shutdown(self, fastapi_patch: MagicMock) -> None:
