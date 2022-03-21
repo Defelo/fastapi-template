@@ -3,9 +3,9 @@ from typing import Any
 from fastapi import APIRouter
 
 from ..auth import auth
-from ..exceptions import responses
 from ..exceptions.auth import InvalidTokenError
 from ..schemas.test import TestResponse
+from ..utils import responses
 
 router = APIRouter(tags=["test"])
 
