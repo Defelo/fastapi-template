@@ -3,7 +3,7 @@ from typing import Callable, Awaitable, TypeVar
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import db
+from .database import db, db_context
 from .endpoints import ROUTERS
 from .environment import ROOT_PATH, DEBUG
 from .logger import get_logger
@@ -28,12 +28,8 @@ def setup_app() -> None:
 
 @app.middleware("http")
 async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -> T:
-    db.create_session()
-    try:
+    async with db_context():
         return await call_next(request)
-    finally:
-        await db.commit()
-        await db.close()
 
 
 @app.on_event("startup")
