@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import db, db_context
 from .endpoints import ROUTERS
-from .environment import ROOT_PATH, DEBUG
-from .logger import get_logger
+from .environment import ROOT_PATH, DEBUG, SENTRY_DSN
+from .logger import get_logger, setup_sentry
 from .version import get_version
 
 T = TypeVar("T")
@@ -17,6 +17,10 @@ app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT
 
 
 def setup_app() -> None:
+    if SENTRY_DSN:
+        logger.debug("initializing sentry")
+        setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
+
     if DEBUG:
         app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
@@ -34,6 +38,8 @@ async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -
 
 @app.on_event("startup")
 async def on_startup() -> None:
+    setup_app()
+
     await db.create_tables()
 
 

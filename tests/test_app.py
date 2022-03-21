@@ -25,6 +25,8 @@ class TestApp(IsolatedAsyncioTestCase):
 
     @patch("api.app.ROUTERS")
     @patch("api.app.app")
+    @patch("api.app.SENTRY_DSN", None)
+    @patch("api.app.DEBUG", False)
     async def test__setup_app(self, app_mock: MagicMock, routers_mock: MagicMock) -> None:
         routers = mock_list(5)
         routers_mock.__iter__.return_value = iter(routers.copy())
@@ -34,9 +36,34 @@ class TestApp(IsolatedAsyncioTestCase):
 
         self.assertFalse(routers)
 
+    @patch("api.app.get_version")
+    @patch("api.app.setup_sentry")
+    @patch("api.app.ROUTERS")
+    @patch("api.app.app")
+    @patch("api.app.SENTRY_DSN")
+    @patch("api.app.DEBUG", False)
+    async def test__setup_app__sentry(
+        self,
+        sentry_dsn_mock: MagicMock,
+        app_mock: MagicMock,
+        routers_mock: MagicMock,
+        setup_sentry_mock: MagicMock,
+        get_version_mock: MagicMock,
+    ) -> None:
+        routers = mock_list(5)
+        routers_mock.__iter__.return_value = iter(routers.copy())
+        app_mock.include_router.side_effect = routers.remove
+
+        app.setup_app()
+
+        get_version_mock.assert_called_once_with()
+        setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
+        self.assertFalse(routers)
+
     @patch("api.app.ROUTERS")
     @patch("api.app.CORSMiddleware")
     @patch("api.app.app")
+    @patch("api.app.SENTRY_DSN", None)
     @patch("api.app.DEBUG", True)
     async def test__setup_app__debug(
         self, app_mock: MagicMock, cors_middleware_mock: MagicMock, routers_mock: MagicMock
@@ -74,12 +101,18 @@ class TestApp(IsolatedAsyncioTestCase):
     @patch("api.database.db")
     @patch("fastapi.FastAPI")
     async def test__on_startup(self, fastapi_patch: MagicMock, db_patch: MagicMock) -> None:
-        _, on_startup = self.get_decorated_function(fastapi_patch, "on_event", "startup")
+        module, on_startup = self.get_decorated_function(fastapi_patch, "on_event", "startup")
         db_patch.create_tables = AsyncMock()
+        _setup_app = module.setup_app
+        module.setup_app = MagicMock()
 
-        await on_startup()
+        try:
+            await on_startup()
 
-        db_patch.create_tables.assert_called_once_with()
+            module.setup_app.assert_called_once_with()
+            db_patch.create_tables.assert_called_once_with()
+        finally:
+            module.setup_app = _setup_app
 
     @patch("fastapi.FastAPI")
     async def test__on_shutdown(self, fastapi_patch: MagicMock) -> None:
