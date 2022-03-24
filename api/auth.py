@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional, Any, cast
+from typing import Any, cast
 
 from fastapi import Request, Depends
 from fastapi.openapi.models import HTTPBearer
@@ -28,10 +28,10 @@ class HTTPAuth(SecurityBase):
         self.model = HTTPBearer()
         self.scheme_name = self.__class__.__name__
 
-    async def _get_session(self, token: str) -> Optional[Session]:
+    async def _get_session(self, token: str) -> Session | None:
         raise NotImplementedError
 
-    async def __call__(self, request: Request) -> Optional[Session]:
+    async def __call__(self, request: Request) -> Session | None:
         if not (session := await self._get_session(get_token(request))):
             raise InvalidTokenError
 
@@ -44,10 +44,10 @@ class UserAuth(HTTPAuth):
 
         self.min_level: PermissionLevel = min_level
 
-    async def _get_session(self, token: str) -> Optional[Session]:
+    async def _get_session(self, token: str) -> Session | None:
         return await Session.from_access_token(token)
 
-    async def __call__(self, request: Request) -> Optional[Session]:
+    async def __call__(self, request: Request) -> Session | None:
         if self.min_level == PermissionLevel.PUBLIC:
             try:
                 return await super().__call__(request)
@@ -68,12 +68,12 @@ admin_auth = Depends(UserAuth(PermissionLevel.ADMIN))
 
 
 @Depends
-async def is_admin(session: Optional[Session] = public_auth) -> bool:
+async def is_admin(session: Session | None = public_auth) -> bool:
     return session is not None and session.user.admin
 
 
 def get_user(*args: Column[Any], require_self_or_admin: bool = False) -> Any:
-    async def default_dependency(user_id: str, session: Optional[Session] = public_auth) -> User:
+    async def default_dependency(user_id: str, session: Session | None = public_auth) -> User:
         if user_id.lower() in ["me", "self"] and session:
             user_id = session.user_id
         if not (user := await db.get(User, *args, id=user_id)):

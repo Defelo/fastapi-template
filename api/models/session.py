@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Any
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, ForeignKey, DateTime, Text
@@ -65,7 +65,7 @@ class Session(Base):
         )
 
     @staticmethod
-    async def from_access_token(access_token: str) -> Optional[Session]:
+    async def from_access_token(access_token: str) -> Session | None:
         if (data := decode_jwt(access_token, ["uid", "sid", "rt"])) is None:
             return None
         if await redis.exists(f"session_logout:{data['rt']}"):
@@ -76,7 +76,7 @@ class Session(Base):
     @staticmethod
     async def refresh(refresh_token: str) -> tuple[Session, str, str]:
         token_hash = _hash_token(refresh_token)
-        session: Optional[Session] = await db.get(Session, Session.user, refresh_token=token_hash)
+        session: Session | None = await db.get(Session, Session.user, refresh_token=token_hash)
         if not session:
             raise ValueError("Invalid refresh token")
         if datetime.utcnow() > session.last_update + timedelta(seconds=REFRESH_TOKEN_TTL):

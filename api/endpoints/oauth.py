@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Any
 from urllib.parse import urlunparse, parse_qsl, urlparse, urlencode
 
 from aiohttp import ClientSession, BasicAuth
@@ -27,7 +27,7 @@ def add_qs(url: str, q: dict[str, str]) -> str:
     return urlunparse((scheme, netloc, path, params, urlencode(dict(parse_qsl(query)) | q), fragment))
 
 
-async def resolve_code(login: OAuthLogin) -> tuple[str, Optional[str]]:
+async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
     if login.provider_id not in OAUTH_PROVIDERS:
         raise ProviderNotFoundError
 
@@ -48,7 +48,7 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, Optional[str]]:
 
         data = await response.json()
 
-    access_token: Optional[str] = data.get("access_token")
+    access_token: str | None = data.get("access_token")
     if not access_token:
         raise InvalidOAuthCodeError
 

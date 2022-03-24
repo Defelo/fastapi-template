@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Any
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, Text, ForeignKey
@@ -18,7 +18,7 @@ class OAuthUserConnection(Base):
     user: User = relationship("User", back_populates="oauth_connections")
     provider_id: Mapped[str] = Column(String(64))
     remote_user_id: Mapped[str] = Column(Text)
-    display_name: Mapped[Optional[str]] = Column(Text, nullable=True)
+    display_name: Mapped[str | None] = Column(Text, nullable=True)
 
     @property
     def serialize(self) -> dict[str, Any]:
@@ -26,7 +26,7 @@ class OAuthUserConnection(Base):
 
     @staticmethod
     async def create(
-        user_id: str, provider_id: str, remote_user_id: str, display_name: Optional[str]
+        user_id: str, provider_id: str, remote_user_id: str, display_name: str | None
     ) -> OAuthUserConnection:
         row = OAuthUserConnection(
             id=str(uuid4()),

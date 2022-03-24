@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from ..utils import example, get_example
@@ -13,7 +11,7 @@ class User(BaseModel):
     id: str
     name: str
     registration: float
-    last_login: Optional[float]
+    last_login: float | None
     enabled: bool
     admin: bool
     password: bool
@@ -40,15 +38,15 @@ class UsersResponse(BaseModel):
 
 class CreateUser(BaseModel):
     name: str = Field(..., regex=USERNAME_REGEX)
-    password: Optional[str] = Field(None, regex=PASSWORD_REGEX)
-    oauth_register_token: Optional[str]
-    recaptcha_response: Optional[str]
+    password: str | None = Field(None, regex=PASSWORD_REGEX)
+    oauth_register_token: str | None
+    recaptcha_response: str | None
     enabled: bool = True
     admin: bool = False
 
 
 class UpdateUser(BaseModel):
-    name: Optional[str] = Field(None, regex=USERNAME_REGEX)
-    password: Optional[str] = Field(None, regex=PASSWORD_REGEX)
-    enabled: Optional[bool]
-    admin: Optional[bool]
+    name: str | None = Field(None, regex=USERNAME_REGEX)
+    password: str | None = Field(None, regex=PASSWORD_REGEX)
+    enabled: bool | None
+    admin: bool | None

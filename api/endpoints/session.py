@@ -1,5 +1,5 @@
 import hashlib
-from typing import Optional, Any
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Request, Body
@@ -27,7 +27,7 @@ from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled, response
 router = APIRouter(tags=["sessions"])
 
 
-async def _check_mfa(user: models.User, mfa_code: Optional[str], recovery_code: Optional[str]) -> bool:
+async def _check_mfa(user: models.User, mfa_code: str | None, recovery_code: str | None) -> bool:
     if not user.mfa_enabled or not user.mfa_secret:
         return True
 
@@ -73,7 +73,7 @@ async def login(data: Login, request: Request) -> Any:
     ):
         raise RecaptchaError
 
-    user: Optional[models.User] = await db.first(models.User.filter_by_name(data.name))
+    user: models.User | None = await db.first(models.User.filter_by_name(data.name))
     if not user or not await user.check_password(data.password):
         await redis.incr(key)
         raise InvalidCredentialsError
@@ -104,7 +104,7 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     """Create a new session"""
 
     remote_user_id, display_name = await resolve_code(data)
-    connection: Optional[models.OAuthUserConnection] = await db.get(
+    connection: models.OAuthUserConnection | None = await db.get(
         models.OAuthUserConnection,
         models.OAuthUserConnection.user,
         provider_id=data.provider_id,
@@ -189,7 +189,7 @@ async def logout(user: models.User = get_user(models.User.sessions, require_self
 async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
     """Delete a specific session of a given user"""
 
-    session: Optional[models.Session] = await db.get(models.Session, id=session_id, user_id=user.id)
+    session: models.Session | None = await db.get(models.Session, id=session_id, user_id=user.id)
     if not session:
         raise SessionNotFoundError
 

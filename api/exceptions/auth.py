@@ -1,4 +1,4 @@
-from typing import Type, Union, Any
+from typing import Type, Any
 
 from fastapi import status
 
@@ -18,13 +18,13 @@ class PermissionDeniedError(APIException):
     description = "The user is not allowed to use this endpoint."
 
 
-def user_responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
+def user_responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
     """api responses for user_auth dependency"""
 
     return responses(default, *args, InvalidTokenError)
 
 
-def admin_responses(default: type, *args: Type[APIException]) -> dict[Union[int, str], dict[str, Any]]:
+def admin_responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
     """api responses for admin_auth dependency"""
 
     return user_responses(default, *args, PermissionDeniedError)

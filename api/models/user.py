@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from sqlalchemy import Column, String, DateTime, Boolean, func
@@ -26,14 +26,14 @@ class User(Base):
 
     id: Mapped[str] = Column(String(36), primary_key=True, unique=True)
     name: Mapped[str] = Column(String(32), unique=True)
-    password: Mapped[Optional[str]] = Column(String(128), nullable=True)
+    password: Mapped[str | None] = Column(String(128), nullable=True)
     registration: Mapped[datetime] = Column(DateTime)
-    last_login: Mapped[Optional[datetime]] = Column(DateTime, nullable=True)
+    last_login: Mapped[datetime | None] = Column(DateTime, nullable=True)
     enabled: Mapped[bool] = Column(Boolean, default=True)
     admin: Mapped[bool] = Column(Boolean, default=False)
-    mfa_secret: Mapped[Optional[str]] = Column(String(32), nullable=True)
+    mfa_secret: Mapped[str | None] = Column(String(32), nullable=True)
     mfa_enabled: Mapped[bool] = Column(Boolean, default=False)
-    mfa_recovery_code: Mapped[Optional[str]] = Column(String(64), nullable=True)
+    mfa_recovery_code: Mapped[str | None] = Column(String(64), nullable=True)
     sessions: list[Session] = relationship("Session", back_populates="user", cascade="all, delete")
     oauth_connections: list[OAuthUserConnection] = relationship(
         "OAuthUserConnection", back_populates="user", cascade="all, delete"
@@ -44,7 +44,7 @@ class User(Base):
         return select(User).where(func.lower(User.name) == name.lower())
 
     @staticmethod
-    async def create(name: str, password: Optional[str], enabled: bool, admin: bool) -> User:
+    async def create(name: str, password: str | None, enabled: bool, admin: bool) -> User:
         user = User(
             id=str(uuid4()),
             name=name,
@@ -87,7 +87,7 @@ class User(Base):
 
         return await verify_password(password, self.password)
 
-    async def change_password(self, password: Optional[str]) -> None:
+    async def change_password(self, password: str | None) -> None:
         self.password = await hash_password(password) if password else None
 
     async def create_session(self, device_name: str) -> tuple[Session, str, str]:
@@ -97,7 +97,7 @@ class User(Base):
         return await Session.create(self.id, device_name)
 
     @staticmethod
-    async def from_access_token(access_token: str) -> Optional[User]:
+    async def from_access_token(access_token: str) -> User | None:
         if (data := decode_jwt(access_token, ["uid", "sid", "rt"])) is None:
             return None
         if await redis.exists(f"session_logout:{data['rt']}"):

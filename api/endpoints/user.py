@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Query, Body, Request
 from pyotp import random_base32
@@ -36,10 +36,10 @@ router = APIRouter(tags=["users"])
 async def get_users(
     limit: int = Query(100, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    name: Optional[str] = Query(None, max_length=256),
-    enabled: Optional[bool] = Query(None),
-    admin: Optional[bool] = Query(None),
-    mfa_enabled: Optional[bool] = Query(None),
+    name: str | None = Query(None, max_length=256),
+    enabled: bool | None = Query(None),
+    admin: bool | None = Query(None),
+    mfa_enabled: bool | None = Query(None),
 ) -> Any:
     """Get all users"""
 

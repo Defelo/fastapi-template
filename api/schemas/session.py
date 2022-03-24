@@ -1,5 +1,3 @@
-from typing import Optional
-
 import jwt
 from pydantic import BaseModel
 
@@ -24,9 +22,9 @@ class Session(BaseModel):
 class Login(BaseModel):
     name: str
     password: str
-    mfa_code: Optional[str] = ""
-    recovery_code: Optional[str] = ""
-    recaptcha_response: Optional[str]
+    mfa_code: str | None = ""
+    recovery_code: str | None = ""
+    recaptcha_response: str | None
 
 
 class LoginResponse(BaseModel):
@@ -46,5 +44,5 @@ class LoginResponse(BaseModel):
 
 
 class OAuthLoginResponse(BaseModel):
-    login: Optional[LoginResponse]
-    register_token: Optional[str]
+    login: LoginResponse | None
+    register_token: str | None

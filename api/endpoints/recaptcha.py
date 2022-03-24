@@ -1,4 +1,4 @@
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from fastapi import APIRouter
 
@@ -8,7 +8,7 @@ from ..utils import recaptcha_enabled, responses
 router = APIRouter(tags=["recaptcha"])
 
 
-@router.get("/recaptcha", responses=responses(cast(type, Optional[str])))
+@router.get("/recaptcha", responses=responses(cast(type, str | None)))
 async def get_recpatcha_sitekey() -> Any:
     """Get ReCaptcha sitekey"""
 
