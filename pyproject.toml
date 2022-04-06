@@ -14,7 +14,7 @@ fastapi = "^0.75.1"
 uvicorn = "^0.17.6"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
-SQLAlchemy = "^1.4.34"
+SQLAlchemy = "^1.4.35"
 aiomysql = "^0.0.22"
 asyncpg = "^0.25.0"
 sentry-sdk = "^1.5.8"
@@ -25,7 +25,7 @@ flake8 = "^4.0.1"
 black = "^22.3.0"
 wemake-python-styleguide = "^0.16.1"
 mypy = "^0.942"
-SQLAlchemy = { extras = ["mypy"], version = "^1.4.34" }
+SQLAlchemy = { extras = ["mypy"], version = "^1.4.35" }
 coverage = "^6.3.2"
 parameterized = "^0.8.1"
 
