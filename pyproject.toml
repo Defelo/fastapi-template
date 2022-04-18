@@ -10,7 +10,7 @@ repository = "https://github.com/Defelo/fastapi-template"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.75.1"
+fastapi = "^0.75.2"
 uvicorn = "^0.17.6"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
