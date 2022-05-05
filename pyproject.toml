@@ -24,7 +24,7 @@ pydantic = "^1.9.0"
 flake8 = "^4.0.1"
 black = "^22.3.0"
 wemake-python-styleguide = "^0.16.1"
-mypy = "^0.942"
+mypy = "^0.950"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.36" }
 coverage = "^6.3.2"
 parameterized = "^0.8.1"
