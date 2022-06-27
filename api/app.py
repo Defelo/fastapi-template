@@ -1,13 +1,14 @@
-from typing import Callable, Awaitable, TypeVar
+from typing import Awaitable, Callable, TypeVar
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import db, db_context
 from .endpoints import ROUTERS
-from .environment import ROOT_PATH, DEBUG, SENTRY_DSN
+from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .version import get_version
+
 
 T = TypeVar("T")
 

@@ -1,4 +1,4 @@
-from fastapi import Request, Depends
+from fastapi import Depends, Request
 from fastapi.openapi.models import HTTPBearer
 from fastapi.security.base import SecurityBase
 

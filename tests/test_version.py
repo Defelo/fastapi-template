@@ -1,7 +1,8 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from api import version
+
 from utils import run_module
 
 

@@ -1,13 +1,11 @@
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import MagicMock, patch, AsyncMock
-
-from fastapi.security.base import SecurityBase
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from api import auth
-
-from parameterized import parameterized
-
 from api.exceptions.auth import InvalidTokenError
+
+from fastapi.security.base import SecurityBase
+from parameterized import parameterized
 
 
 class TestAuth(IsolatedAsyncioTestCase):

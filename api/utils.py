@@ -1,6 +1,6 @@
-from typing import Any, cast, Type
+from typing import Any, Type, cast
 
-from pydantic import BaseModel, BaseConfig
+from pydantic import BaseConfig, BaseModel
 from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 
 from .exceptions.api_exception import APIException

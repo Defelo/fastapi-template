@@ -1,9 +1,10 @@
 from typing import Any, Callable
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from api import app
-from utils import mock_list, import_module, AsyncMock
+
+from utils import AsyncMock, import_module, mock_list
 
 
 class TestApp(IsolatedAsyncioTestCase):

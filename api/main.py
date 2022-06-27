@@ -3,6 +3,7 @@ import uvicorn
 from .environment import HOST, PORT, RELOAD
 from .logger import get_logger
 
+
 get_logger(__name__)
 
 

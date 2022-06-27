@@ -2,7 +2,6 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
 
 from aioredis import Redis
-
 from utils import import_module
 
 

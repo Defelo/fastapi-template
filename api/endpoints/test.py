@@ -7,6 +7,7 @@ from ..exceptions.auth import InvalidTokenError
 from ..schemas.test import TestResponse
 from ..utils import responses
 
+
 router = APIRouter(tags=["test"])
 
 

@@ -22,6 +22,7 @@ pydantic = "^1.9.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
+isort = "^5.10.1"
 black = "^22.3.0"
 wemake-python-styleguide = "^0.16.1"
 mypy = "^0.961"
@@ -32,9 +33,11 @@ parameterized = "^0.8.1"
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
 flake8 = "flake8 . --count --statistics --show-source"
+isort = "isort ."
 black = "black ."
+format = ["isort", "black"]
 mypy = "mypy ."
-lint = ["black", "mypy", "flake8"]
+lint = ["format", "mypy", "flake8"]
 test = { shell = "PYTHONWARNINGS=ignore python -m unittest discover -v tests", interpreter = "bash" }
 pre-commit = ["lint", "test"]
 
@@ -78,6 +81,14 @@ interpreter = "bash"
 target-version = ["py310"]
 line-length = 120
 skip-magic-trailing-comma = true
+
+[tool.isort]
+profile = "black"
+py_version = 310
+line_length = 120
+lines_after_imports = 2
+reverse_relative = true
+sections = ["FUTURE", "STDLIB", "FIRSTPARTY", "THIRDPARTY", "LOCALFOLDER"]
 
 [tool.mypy]
 strict = true
