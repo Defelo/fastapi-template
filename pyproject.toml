@@ -11,7 +11,7 @@ repository = "https://github.com/Defelo/fastapi-template"
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.78.0"
-uvicorn = "^0.17.6"
+uvicorn = "^0.18.2"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.39"
