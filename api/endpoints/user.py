@@ -1,33 +1,34 @@
 import hashlib
 from typing import Any
 
-from fastapi import APIRouter, Query, Body, Request
+from fastapi import APIRouter, Body, Query, Request
 from pyotp import random_base32
 from sqlalchemy import asc, func
 
 from .. import models
-from ..auth import get_user, admin_auth, is_admin, user_auth
-from ..database import db, select, filter_by
-from ..environment import OPEN_REGISTRATION, OPEN_OAUTH_REGISTRATION
-from ..exceptions.auth import user_responses, PermissionDeniedError, admin_responses
-from ..exceptions.oauth import RemoteAlreadyLinkedError, InvalidOAuthTokenError
+from ..auth import admin_auth, get_user, is_admin, user_auth
+from ..database import db, filter_by, select
+from ..environment import OPEN_OAUTH_REGISTRATION, OPEN_REGISTRATION
+from ..exceptions.auth import PermissionDeniedError, admin_responses, user_responses
+from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
-    UserNotFoundError,
-    UserAlreadyExistsError,
-    MFAAlreadyEnabledError,
-    MFANotInitializedError,
-    InvalidCodeError,
-    MFANotEnabledError,
-    NoLoginMethodError,
     CannotDeleteLastLoginMethodError,
-    RegistrationDisabledError,
+    InvalidCodeError,
+    MFAAlreadyEnabledError,
+    MFANotEnabledError,
+    MFANotInitializedError,
+    NoLoginMethodError,
     OAuthRegistrationDisabledError,
     RecaptchaError,
+    RegistrationDisabledError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
 )
 from ..redis import redis
 from ..schemas.session import LoginResponse
-from ..schemas.user import User, UsersResponse, CreateUser, UpdateUser, MFA_CODE_REGEX
-from ..utils import check_mfa_code, recaptcha_enabled, check_recaptcha
+from ..schemas.user import MFA_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
+from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
+
 
 router = APIRouter(tags=["users"])
 

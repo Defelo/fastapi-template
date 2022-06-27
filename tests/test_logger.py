@@ -1,13 +1,13 @@
 import sys
 from logging import PercentStyle, StreamHandler
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch, MagicMock
-
-from uvicorn.config import LOGGING_CONFIG
-from uvicorn.logging import DefaultFormatter
+from unittest.mock import MagicMock, patch
 
 from api import logger
+
 from utils import mock_list
+from uvicorn.config import LOGGING_CONFIG
+from uvicorn.logging import DefaultFormatter
 
 
 class TestLogger(IsolatedAsyncioTestCase):

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, Text, ForeignKey
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import Column, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, relationship
 
 from .user import User
-from ..database import db, Base
+from ..database import Base, db
 
 
 class OAuthUserConnection(Base):

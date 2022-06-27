@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from ..utils import example, get_example
 
+
 USERNAME_REGEX = r"^[a-zA-Z0-9]{4,32}$"
 PASSWORD_REGEX = r"^((?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,})?$"  # noqa: S105
 MFA_CODE_REGEX = r"^\d{6}$"

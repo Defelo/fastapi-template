@@ -1,7 +1,7 @@
 import asyncio
-from typing import Callable, Awaitable, TypeVar
+from typing import Awaitable, Callable, TypeVar
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,10 +9,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
 from .endpoints import ROUTERS
-from .environment import ROOT_PATH, DEBUG, SENTRY_DSN
+from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
-from .models import User, Session
+from .models import Session, User
 from .version import get_version
+
 
 T = TypeVar("T")
 

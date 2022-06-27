@@ -1,9 +1,10 @@
-from typing import cast, Callable
+from typing import Callable, cast
 
 from aioredis import Redis, from_url
 
-from .environment import REDIS_HOST, REDIS_PORT, REDIS_DB
+from .environment import REDIS_DB, REDIS_HOST, REDIS_PORT
 from .logger import get_logger
+
 
 logger = get_logger(__name__)
 

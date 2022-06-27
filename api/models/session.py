@@ -6,15 +6,16 @@ from datetime import datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, ForeignKey, DateTime, Text
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, relationship
 
 from .user import User
-from ..database import db, delete, Base
+from ..database import Base, db, delete
 from ..environment import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from ..logger import get_logger
 from ..redis import redis
 from ..utils import decode_jwt, encode_jwt
+
 
 logger = get_logger(__name__)
 

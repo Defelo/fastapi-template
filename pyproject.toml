@@ -10,36 +10,39 @@ repository = "https://github.com/Defelo/fastapi-template"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.75.0"
-uvicorn = "^0.17.6"
+fastapi = "^0.78.0"
+uvicorn = "^0.18.2"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
-SQLAlchemy = "^1.4.32"
-aiomysql = "^0.0.22"
+SQLAlchemy = "^1.4.39"
+aiomysql = "^0.1.1"
 asyncpg = "^0.25.0"
-sentry-sdk = "^1.5.8"
-pydantic = "^1.9.0"
+sentry-sdk = "^1.6.0"
+pydantic = "^1.9.1"
 argon2-cffi = "^21.3.0"
 PyJWT = "^2.3.0"
-starlette = "^0.17.1"
+starlette = "^0.19.1"
 pyotp = "^2.6.0"
 jq = "^1.2.2"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
-black = "^22.1.0"
+isort = "^5.10.1"
+black = "^22.3.0"
 wemake-python-styleguide = "^0.16.1"
-mypy = "^0.942"
-SQLAlchemy = { extras = ["mypy"], version = "^1.4.32" }
-coverage = "^6.3.2"
+mypy = "^0.961"
+SQLAlchemy = { extras = ["mypy"], version = "^1.4.39" }
+coverage = "^6.4"
 parameterized = "^0.8.1"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
 flake8 = "flake8 . --count --statistics --show-source"
+isort = "isort ."
 black = "black ."
+format = ["isort", "black"]
 mypy = "mypy ."
-lint = ["black", "mypy", "flake8"]
+lint = ["format", "mypy", "flake8"]
 test = { shell = "PYTHONWARNINGS=ignore python -m unittest discover -v tests", interpreter = "bash" }
 pre-commit = ["lint", "test"]
 
@@ -67,10 +70,30 @@ options = ["--no-clean"]
 type = "boolean"
 default = true
 
+[tool.poe.tasks.setup]
+shell = """
+set -ex
+poetry install --no-root
+if ! [[ -e .env ]]; then cp fastapi.env .env; fi
+./pre-commit.sh install
+unset VIRTUAL_ENV
+git submodule update --init
+git submodule foreach 'poe setup'
+"""
+interpreter = "bash"
+
 [tool.black]
 target-version = ["py310"]
 line-length = 120
 skip-magic-trailing-comma = true
+
+[tool.isort]
+profile = "black"
+py_version = 310
+line_length = 120
+lines_after_imports = 2
+reverse_relative = true
+sections = ["FUTURE", "STDLIB", "FIRSTPARTY", "THIRDPARTY", "LOCALFOLDER"]
 
 [tool.mypy]
 strict = true

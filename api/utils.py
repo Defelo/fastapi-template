@@ -1,21 +1,21 @@
 import hashlib
 from asyncio import get_event_loop
 from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from functools import wraps
-from typing import Callable, Awaitable, Any, cast, Type, TypeVar
+from typing import Any, Awaitable, Callable, Type, TypeVar, cast
 
 import aiohttp
 import jwt
 from argon2 import PasswordHasher
-from argon2.exceptions import VerificationError, InvalidHash
-from pydantic import BaseModel, BaseConfig
+from argon2.exceptions import InvalidHash, VerificationError
+from pydantic import BaseConfig, BaseModel
 from pyotp import TOTP
 from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 
 from .environment import (
-    HASH_TIME_COST,
     HASH_MEMORY_COST,
+    HASH_TIME_COST,
     JWT_SECRET,
     MFA_VALID_WINDOW,
     RECAPTCHA_SECRET,
@@ -23,6 +23,7 @@ from .environment import (
 )
 from .exceptions.api_exception import APIException
 from .redis import redis
+
 
 T = TypeVar("T")
 

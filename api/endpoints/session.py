@@ -2,27 +2,28 @@ import hashlib
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Request, Body
+from fastapi import APIRouter, Body, Request
 
 from .oauth import resolve_code
 from .. import models
-from ..auth import get_user, user_auth, admin_auth
+from ..auth import admin_auth, get_user, user_auth
 from ..database import db, filter_by
-from ..environment import OAUTH_REGISTER_TOKEN_TTL, LOGIN_FAILS_BEFORE_CAPTCHA
-from ..exceptions.auth import user_responses, admin_responses
-from ..exceptions.oauth import ProviderNotFoundError, InvalidOAuthCodeError
+from ..environment import LOGIN_FAILS_BEFORE_CAPTCHA, OAUTH_REGISTER_TOKEN_TTL
+from ..exceptions.auth import admin_responses, user_responses
+from ..exceptions.oauth import InvalidOAuthCodeError, ProviderNotFoundError
 from ..exceptions.session import (
     InvalidCredentialsError,
-    SessionNotFoundError,
     InvalidRefreshTokenError,
+    SessionNotFoundError,
     UserDisabledError,
 )
-from ..exceptions.user import UserNotFoundError, InvalidCodeError, RecaptchaError
+from ..exceptions.user import InvalidCodeError, RecaptchaError, UserNotFoundError
 from ..models.session import SessionExpiredError
 from ..redis import redis
 from ..schemas.oauth import OAuthLogin
-from ..schemas.session import Login, LoginResponse, Session, OAuthLoginResponse
+from ..schemas.session import Login, LoginResponse, OAuthLoginResponse, Session
 from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled, responses
+
 
 router = APIRouter(tags=["sessions"])
 

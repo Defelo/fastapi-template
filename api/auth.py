@@ -1,7 +1,7 @@
 from enum import Enum, auto
 from typing import Any, cast
 
-from fastapi import Request, Depends
+from fastapi import Depends, Request
 from fastapi.openapi.models import HTTPBearer
 from fastapi.security.base import SecurityBase
 from sqlalchemy import Column
@@ -9,7 +9,7 @@ from sqlalchemy import Column
 from .database import db
 from .exceptions.auth import InvalidTokenError, PermissionDeniedError
 from .exceptions.user import UserNotFoundError
-from .models import User, Session
+from .models import Session, User
 
 
 def get_token(request: Request) -> str:

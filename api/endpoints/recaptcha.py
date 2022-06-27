@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from ..environment import RECAPTCHA_SITEKEY
 from ..utils import recaptcha_enabled, responses
 
+
 router = APIRouter(tags=["recaptcha"])
 
 

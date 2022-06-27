@@ -3,17 +3,17 @@ import hashlib
 import json
 import re
 from contextlib import asynccontextmanager
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from re import Match
-from typing import Any, cast, AsyncIterator
+from typing import Any, AsyncIterator, cast
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
 
+from api import utils
+
 import jwt
 from parameterized import parameterized
-
-from api import utils
-from utils import mock_dict, mock_list, AsyncMock
+from utils import AsyncMock, mock_dict, mock_list
 
 
 class TestUtils(IsolatedAsyncioTestCase):

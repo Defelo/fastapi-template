@@ -2,13 +2,13 @@ from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import Any, AsyncIterator
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import patch, call, MagicMock
+from unittest.mock import MagicMock, call, patch
+
+from api import database
 
 from parameterized import parameterized
 from sqlalchemy.orm import DeclarativeMeta, registry
-
-from api import database
-from utils import mock_list, mock_dict, AsyncMock, import_module
+from utils import AsyncMock, import_module, mock_dict, mock_list
 
 
 class TestDatabase(IsolatedAsyncioTestCase):

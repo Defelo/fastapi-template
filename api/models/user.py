@@ -4,15 +4,16 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from sqlalchemy import Column, String, DateTime, Boolean, func
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import Boolean, Column, DateTime, String, func
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
-from ..database import db, select, Base
-from ..environment import ADMIN_USERNAME, ADMIN_PASSWORD
+from ..database import Base, db, select
+from ..environment import ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import hash_password, verify_password, decode_jwt
+from ..utils import decode_jwt, hash_password, verify_password
+
 
 if TYPE_CHECKING:
     from .oauth_user_connection import OAuthUserConnection

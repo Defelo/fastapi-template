@@ -1,7 +1,7 @@
 from typing import Any
-from urllib.parse import urlunparse, parse_qsl, urlparse, urlencode
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from aiohttp import ClientSession, BasicAuth
+from aiohttp import BasicAuth, ClientSession
 from fastapi import APIRouter
 
 from .. import models
@@ -10,14 +10,15 @@ from ..database import db, filter_by
 from ..environment import OAUTH_PROVIDERS
 from ..exceptions.auth import admin_responses
 from ..exceptions.oauth import (
-    ProviderNotFoundError,
-    InvalidOAuthCodeError,
-    RemoteAlreadyLinkedError,
     ConnectionNotFoundError,
+    InvalidOAuthCodeError,
+    ProviderNotFoundError,
+    RemoteAlreadyLinkedError,
 )
 from ..exceptions.user import CannotDeleteLastLoginMethodError, UserNotFoundError
-from ..schemas.oauth import OAuthLogin, OAuthProvider, OAuthConnection
+from ..schemas.oauth import OAuthConnection, OAuthLogin, OAuthProvider
 from ..utils import responses
+
 
 router = APIRouter(tags=["oauth"])
 
