@@ -45,6 +45,7 @@ mypy = "mypy ."
 lint = ["format", "mypy", "flake8"]
 test = { shell = "PYTHONWARNINGS=ignore python -m unittest discover -v tests", interpreter = "bash" }
 pre-commit = ["lint", "test"]
+hash-password = """python -c 'from api.utils import password_hasher; import sys; print(password_hasher.hash(sys.argv[1]))'"""
 
 [tool.poe.tasks.coverage]
 shell = """
