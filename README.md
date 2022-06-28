@@ -46,3 +46,44 @@ To later update your repository you can just merge the template into your own br
     2. Uncomment the workflow triggers in [.github/workflows/docker_clean.yml](https://github.com/Defelo/fastapi-template/blob/develop/.github/workflows/docker_clean.yml#L4-L6)
     3. Create a [personal access token](https://github.com/settings/tokens/new) with `delete:packages` permissions
     4. Create a new `docker-clean` environment, allow only `develop` as deployment branch and create a `CR_PAT` secret that contains the personal access token
+
+## Development
+
+### Prerequisites
+- [Python 3.10](https://python.org/)
+- [Poetry](https://python-poetry.org/) + [poethepoet](https://pypi.org/project/poethepoet/)
+- [Git](https://git-scm.com/)
+- [Docker](https://www.docker.com/) + [docker-compose](https://docs.docker.com/compose/) (recommended)
+- [PyCharm Community/Professional](https://www.jetbrains.com/pycharm/) (recommended)
+
+### Clone the repository
+
+#### SSH (recommended)
+```bash
+git clone --recursive git@github.com:Defelo/fastapi-template.git
+```
+
+#### HTTPS
+```bash
+git clone --recursive https://github.com/Defelo/fastapi-template.git
+```
+
+### Setup development environment
+
+After cloning the repository, you can setup the development environment by running the following command:
+
+```bash
+poe setup
+```
+
+This will create a virtual environment, install the dependencies, create a `.env` file and install the pre-commit hook.
+
+### PyCharm configuration
+
+- Open PyCharm and go to `Settings` ➔ `Project` ➔ `Python Interpreter`
+- Open the menu `Python Interpreter` and click on `Show All...`
+- Click on the plus symbol
+- Click on `Poetry Environment`
+- Select `Existing environment` (setup the environment first by running `poe setup`)
+- Confirm with `OK`
+- Change the working directory to root path  ➔ `Edit Configurations`  ➔ `Working directory`
