@@ -96,3 +96,11 @@ Setup the run configuration:
 - Change the working directory to root path  ➔ `Edit Configurations`  ➔ `Working directory`
 - In the `EnvFile` tab add your `.env` file
 - Confirm with `OK`
+
+### Run the API
+
+To run the api for development you can use the `api` task:
+
+```bash
+poe api
+```
