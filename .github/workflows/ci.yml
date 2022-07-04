@@ -113,7 +113,7 @@ jobs:
 #         GITHUB_TOKEN: ${{ secrets.github_token }}
 
   tests:
-    name: Tests (unittest)
+    name: Tests (pytest+coverage)
     runs-on: ubuntu-latest
 
     steps:
