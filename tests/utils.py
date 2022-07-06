@@ -20,11 +20,17 @@ def mock_dict(size: int, string_keys: bool = False) -> dict[MagicMock | str, Mag
     return {(str(MagicMock()) if string_keys else MagicMock()): MagicMock() for _ in range(size)}
 
 
-def import_module(name: str) -> Any:
+def reload_module(module: ModuleType) -> ModuleType:
+    return importlib.reload(module)
+
+
+def import_module(name: str | ModuleType) -> ModuleType:
+    if isinstance(name, ModuleType):
+        return reload_module(name)
     if module := sys.modules.get(name):
         return importlib.reload(module)
 
-    return __import__(name)
+    return importlib.import_module(name)
 
 
 def run_module(module: ModuleType) -> None:
