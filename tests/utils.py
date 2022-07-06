@@ -1,6 +1,8 @@
 import importlib
+import inspect
 import runpy
 import sys
+from types import ModuleType
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -25,5 +27,5 @@ def import_module(name: str) -> Any:
     return __import__(name)
 
 
-def run_module(module: str) -> None:
-    runpy.run_module(module, {}, "__main__")
+def run_module(module: ModuleType) -> None:
+    runpy.run_path(inspect.getfile(module), {}, "__main__")
