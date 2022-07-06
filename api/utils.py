@@ -24,7 +24,6 @@ def responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[
 
 
 def get_example(arg: Type[BaseModel]) -> dict[str, Any]:
-    # noinspection PyUnresolvedReferences
     return cast(dict[str, dict[str, Any]], arg.Config.schema_extra)["example"]
 
 
