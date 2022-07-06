@@ -4,11 +4,11 @@ from typing import Any, AsyncIterator
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, call, patch
 
-from api import database
-
 from parameterized import parameterized
 from sqlalchemy.orm import DeclarativeMeta, registry
 from utils import AsyncMock, import_module, mock_dict, mock_list
+
+from api import database
 
 
 class TestDatabase(IsolatedAsyncioTestCase):

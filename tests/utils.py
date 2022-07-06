@@ -5,10 +5,10 @@ from typing import Any, cast
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
 
-from api.endpoints import ROUTERS
-
 from fastapi import APIRouter
 from fastapi.routing import APIRoute
+
+from api.endpoints import ROUTERS
 
 
 class EndpointsTestCase(IsolatedAsyncioTestCase):

@@ -1,10 +1,10 @@
+from utils import EndpointsTestCase
+
 from api.auth import auth
 from api.endpoints.test import router
 
-from utils import EndpointsTestCase
 
-
-class TestTest(EndpointsTestCase):
+class TestTest(EndpointsTestCase):  # type: ignore
     ROUTER = router
 
     async def test__test(self) -> None:

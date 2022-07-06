@@ -88,6 +88,7 @@ py_version = 310
 line_length = 120
 lines_after_imports = 2
 reverse_relative = true
+known_local_folder = ["api", "tests"]
 sections = ["FUTURE", "STDLIB", "FIRSTPARTY", "THIRDPARTY", "LOCALFOLDER"]
 
 [tool.mypy]
