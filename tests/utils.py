@@ -3,13 +3,7 @@ import inspect
 import runpy
 import sys
 from types import ModuleType
-from typing import Any
 from unittest.mock import MagicMock
-
-
-class AsyncMock(MagicMock):
-    async def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 def mock_list(size: int) -> list[MagicMock]:

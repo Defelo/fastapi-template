@@ -101,6 +101,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = ["reload_modules"]
 
 [tool.coverage.run]
 omit = ["api/__main__.py", "tests/*"]
