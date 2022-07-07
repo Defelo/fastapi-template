@@ -141,7 +141,7 @@ jobs:
           poetry install -n --no-root
 
       - name: Run unit tests with coverage
-        run: poe coverage --xml
+        run: poe coverage --xml --no-check --no-clean
 
       - name: Send coverage report to codeclimate
         env:
@@ -153,6 +153,9 @@ jobs:
           wget -O reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
           chmod +x reporter
           ./reporter after-build
+
+      - name: Check coverage
+        run: poetry run coverage report
 
   docker_build:
     name: Docker Build

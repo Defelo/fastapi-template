@@ -43,16 +43,18 @@ format = ["isort", "black"]
 mypy = "mypy ."
 lint = ["format", "mypy", "flake8"]
 test = "pytest -v tests"
-pre-commit = ["lint", "test"]
+pre-commit = ["lint", "coverage"]
 
 [tool.poe.tasks.coverage]
 shell = """
 set -e
 coverage run --branch --source=api -m pytest -v tests
-coverage report
-if [[ "$xml" = True ]]; then coverage xml; fi
-if [[ "$html" = True ]]; then coverage html && xdg-open htmlcov/index.html; fi
+if [[ "$check" != True ]]; then fail="--fail-under=0"; fi
+if ! coverage report $fail; then c=2; fi
+if [[ "$xml" = True ]]; then coverage xml --fail-under=0; fi
+if [[ "$html" = True ]]; then coverage html --fail-under=0 && xdg-open htmlcov/index.html; fi
 if [[ "$clean" = True ]]; then coverage erase; fi
+exit $c
 """
 interpreter = "bash"
 
@@ -66,6 +68,11 @@ type = "boolean"
 
 [tool.poe.tasks.coverage.args.clean]
 options = ["--no-clean"]
+type = "boolean"
+default = true
+
+[tool.poe.tasks.coverage.args.check]
+options = ["--no-check"]
 type = "boolean"
 default = true
 
@@ -105,6 +112,9 @@ markers = ["reload_modules"]
 
 [tool.coverage.run]
 omit = ["api/__main__.py", "tests/*"]
+
+[tool.coverage.report]
+fail_under = 100
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
