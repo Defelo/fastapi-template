@@ -15,6 +15,8 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
+for router in ROUTERS:
+    app.include_router(router)
 
 
 def setup_app() -> None:
@@ -26,9 +28,6 @@ def setup_app() -> None:
         app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
         )
-
-    for router in ROUTERS:
-        app.include_router(router)
 
 
 @app.middleware("http")

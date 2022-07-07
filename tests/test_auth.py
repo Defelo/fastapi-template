@@ -1,60 +1,66 @@
-from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from fastapi.security.base import SecurityBase
-from parameterized import parameterized
+from pytest_mock import MockerFixture
 
 from api import auth
 from api.exceptions.auth import InvalidTokenError
 
 
-class TestAuth(IsolatedAsyncioTestCase):
-    @parameterized.expand([("test", "test"), (None, ""), ("Bearer asDF1234", "asDF1234")])  # type: ignore
-    def test__get_token(self, auth_header: str | None, token: str) -> None:
-        request = MagicMock()
-        request.headers = {"Authorization": auth_header} if auth_header is not None else {}
+@pytest.mark.parametrize("auth_header,token", [("test", "test"), (None, ""), ("Bearer asDF1234", "asDF1234")])
+def test__get_token(auth_header: str | None, token: str) -> None:
+    request = MagicMock()
+    request.headers = {"Authorization": auth_header} if auth_header is not None else {}
 
-        result = auth.get_token(request)
+    result = auth.get_token(request)
 
-        self.assertEqual(token, result)
+    assert result == token
 
-    @patch("api.auth.HTTPBearer")
-    async def test__constructor(self, httpbearer_patch: MagicMock) -> None:
-        token = MagicMock()
 
-        http_auth = auth.HTTPAuth(token)
+async def test__constructor(mocker: MockerFixture) -> None:
+    httpbearer_patch = mocker.patch("api.auth.HTTPBearer")
 
-        httpbearer_patch.assert_called_once_with()
-        self.assertEqual(token, http_auth._token)
-        self.assertEqual(httpbearer_patch(), http_auth.model)
-        self.assertEqual(http_auth.__class__.__name__, http_auth.scheme_name)
-        self.assertTrue(issubclass(auth.HTTPAuth, SecurityBase))
+    token = MagicMock()
 
-    @parameterized.expand([("S3cr3t Token!", True), ("asdf1234", False)])  # type: ignore
-    async def test__check_token(self, token: str, ok: bool) -> None:
-        http_auth = MagicMock()
-        http_auth._token = "S3cr3t Token!"
-        self.assertEqual(ok, await auth.HTTPAuth._check_token(http_auth, token))
+    http_auth = auth.HTTPAuth(token)
 
-    @patch("api.auth.get_token")
-    async def test__call__invalid_token(self, get_token: MagicMock) -> None:
-        request = MagicMock()
-        http_auth = MagicMock()
-        http_auth._check_token = AsyncMock(return_value=False)
+    httpbearer_patch.assert_called_once_with()
+    assert token == http_auth._token
+    assert httpbearer_patch() == http_auth.model
+    assert http_auth.__class__.__name__ == http_auth.scheme_name
+    assert issubclass(auth.HTTPAuth, SecurityBase)
 
-        with self.assertRaises(InvalidTokenError):
-            await auth.HTTPAuth.__call__(http_auth, request)
 
-        get_token.assert_called_once_with(request)
-        http_auth._check_token.assert_called_once_with(get_token())
+@pytest.mark.parametrize("token,ok", [("S3cr3t Token!", True), ("asdf1234", False)])
+async def test__check_token(token: str, ok: bool) -> None:
+    http_auth = MagicMock()
+    http_auth._token = "S3cr3t Token!"
+    assert await auth.HTTPAuth._check_token(http_auth, token) == ok
 
-    @patch("api.auth.get_token")
-    async def test__call__valid_token(self, get_token: MagicMock) -> None:
-        request = MagicMock()
-        http_auth = MagicMock()
-        http_auth._check_token = AsyncMock(return_value=True)
 
-        self.assertTrue(await auth.HTTPAuth.__call__(http_auth, request))
+async def test__call__invalid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
 
-        get_token.assert_called_once_with(request)
-        http_auth._check_token.assert_called_once_with(get_token())
+    request = MagicMock()
+    http_auth = MagicMock()
+    http_auth._check_token = AsyncMock(return_value=False)
+
+    with pytest.raises(InvalidTokenError):
+        await auth.HTTPAuth.__call__(http_auth, request)
+
+    get_token.assert_called_once_with(request)
+    http_auth._check_token.assert_called_once_with(get_token())
+
+
+async def test__call__valid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+
+    request = MagicMock()
+    http_auth = MagicMock()
+    http_auth._check_token = AsyncMock(return_value=True)
+
+    assert await auth.HTTPAuth.__call__(http_auth, request) is True
+
+    get_token.assert_called_once_with(request)
+    http_auth._check_token.assert_called_once_with(get_token())
