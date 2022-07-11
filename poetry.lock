@@ -94,7 +94,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "asyncpg"
-version = "0.25.0"
+version = "0.26.0"
 description = "An asyncio PostgreSQL driver"
 category = "main"
 optional = false
@@ -1045,7 +1045,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "33bdf4e6e709119a2705ec10c4f5d3ae766c87909dcdc37057bada399112d89d"
+content-hash = "61ad4fc12fa5d19f68659788921883e830626caa5d67e6f3502b1718315130be"
 
 [metadata.files]
 aiohttp = []
