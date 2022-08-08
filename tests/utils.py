@@ -1,37 +1,15 @@
 import importlib
+import inspect
 import runpy
 import sys
-from typing import Any, cast
-from unittest import IsolatedAsyncioTestCase
+from contextlib import asynccontextmanager
+from functools import partial
+from types import ModuleType
+from typing import Any, AsyncContextManager, AsyncIterator, Callable, TypeVar, cast
 from unittest.mock import MagicMock
 
-from api.endpoints import ROUTERS
 
-from fastapi import APIRouter
-from fastapi.routing import APIRoute
-
-
-class EndpointsTestCase(IsolatedAsyncioTestCase):
-    ROUTER: APIRouter
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        assert cls.ROUTER in ROUTERS, "Router is not registered!"
-
-    def get_route(self, method: str, path: str) -> APIRoute:
-        routes = [
-            route
-            for route in cast(list[APIRoute], self.ROUTER.routes)
-            if method in route.methods and route.path == path
-        ]
-        self.failIf(not routes, f"Route {method} {path} not found!")
-        self.failIf(len(routes) > 1, f"There is more than one {method} {path} route!")
-        return routes[0]
-
-
-class AsyncMock(MagicMock):
-    async def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return super(AsyncMock, self).__call__(*args, **kwargs)
+T = TypeVar("T")
 
 
 def mock_list(size: int) -> list[MagicMock]:
@@ -42,12 +20,42 @@ def mock_dict(size: int, string_keys: bool = False) -> dict[MagicMock | str, Mag
     return {(str(MagicMock()) if string_keys else MagicMock()): MagicMock() for _ in range(size)}
 
 
-def import_module(name: str) -> Any:
+def reload_module(module: ModuleType) -> ModuleType:
+    return importlib.reload(module)
+
+
+def import_module(name: str | ModuleType) -> ModuleType:
+    if isinstance(name, ModuleType):
+        return reload_module(name)
     if module := sys.modules.get(name):
         return importlib.reload(module)
 
-    return __import__(name)
+    return importlib.import_module(name)
 
 
-def run_module(module: str) -> None:
-    runpy.run_module(module, {}, "__main__")
+def run_module(module: ModuleType) -> None:
+    runpy.run_path(inspect.getfile(module), {}, "__main__")
+
+
+def mock_call_assertions(n: int) -> tuple[list[Callable[[], None]], Callable[[], None]]:
+    events: list[int] = []
+
+    def assert_calls() -> None:
+        assert events == [*range(n)]
+
+    callbacks = [cast(Callable[[], None], partial(events.append, i)) for i in range(n)]
+
+    return callbacks, assert_calls
+
+
+def mock_asynccontextmanager(
+    n: int, value: T
+) -> tuple[Callable[[], AsyncContextManager[T]], list[Callable[[], None]], Callable[[], None]]:
+    [enter_callback, *callbacks, exit_callback], assert_calls = mock_call_assertions(n + 2)
+
+    async def context_manager() -> AsyncIterator[T]:
+        enter_callback()
+        yield value
+        exit_callback()
+
+    return asynccontextmanager(context_manager), callbacks, assert_calls

@@ -40,9 +40,18 @@ class User(Base):
         "OAuthUserConnection", back_populates="user", cascade="all, delete"
     )
 
-    @staticmethod
-    def filter_by_name(name: str) -> Select:
-        return select(User).where(func.lower(User.name) == name.lower())
+    @property
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "registration": self.registration.timestamp(),
+            "last_login": self.last_login.timestamp() if self.last_login else None,
+            "enabled": self.enabled,
+            "admin": self.admin,
+            "password": bool(self.password),
+            "mfa_enabled": self.mfa_enabled,
+        }
 
     @staticmethod
     async def create(name: str, password: str | None, enabled: bool, admin: bool) -> User:
@@ -62,25 +71,16 @@ class User(Base):
         return user
 
     @staticmethod
+    def filter_by_name(name: str) -> Select:
+        return select(User).where(func.lower(User.name) == name.lower())
+
+    @staticmethod
     async def initialize() -> None:
         if await db.exists(select(User)):
             return
 
         await User.create(ADMIN_USERNAME, ADMIN_PASSWORD, True, True)
         logger.info(f"Admin user '{ADMIN_USERNAME}' has been created!")
-
-    @property
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "registration": self.registration.timestamp(),
-            "last_login": self.last_login.timestamp() if self.last_login else None,
-            "enabled": self.enabled,
-            "admin": self.admin,
-            "password": bool(self.password),
-            "mfa_enabled": self.mfa_enabled,
-        }
 
     async def check_password(self, password: str) -> bool:
         if not self.password:

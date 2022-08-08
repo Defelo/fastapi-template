@@ -11,7 +11,8 @@ from .database import db, db_context
 from .endpoints import ROUTERS
 from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
-from .models import Session, User
+from .models import User
+from .models.session import clean_expired_sessions
 from .version import get_version
 
 
@@ -20,6 +21,8 @@ T = TypeVar("T")
 logger = get_logger(__name__)
 
 app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
+for router in ROUTERS:
+    app.include_router(router)
 
 
 def setup_app() -> None:
@@ -31,9 +34,6 @@ def setup_app() -> None:
         app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
         )
-
-    for router in ROUTERS:
-        app.include_router(router)
 
 
 @app.middleware("http")
@@ -51,8 +51,7 @@ async def rollback_on_exception(request: Request, exc: HTTPException) -> JSONRes
 async def clean_expired_sessions_loop() -> None:
     while True:
         try:
-            async with db_context():
-                await Session.clean_expired_sessions()
+            await clean_expired_sessions()
         except Exception as e:
             logger.exception(e)
         await asyncio.sleep(20 * 60)

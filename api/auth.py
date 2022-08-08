@@ -1,5 +1,5 @@
-from enum import Enum, auto
-from typing import Any, cast
+from enum import Enum
+from typing import Any, Awaitable, Callable, cast
 
 from fastapi import Depends, Request
 from fastapi.openapi.models import HTTPBearer
@@ -18,9 +18,9 @@ def get_token(request: Request) -> str:
 
 
 class PermissionLevel(Enum):
-    PUBLIC = auto()
-    USER = auto()
-    ADMIN = auto()
+    PUBLIC = 0
+    USER = 1
+    ADMIN = 2
 
 
 class HTTPAuth(SecurityBase):
@@ -72,7 +72,7 @@ async def is_admin(session: Session | None = public_auth) -> bool:
     return session is not None and session.user.admin
 
 
-def get_user(*args: Column[Any], require_self_or_admin: bool = False) -> Any:
+def _get_user_dependency(*args: Column[Any]) -> Callable[[str, Session | None], Awaitable[User]]:
     async def default_dependency(user_id: str, session: Session | None = public_auth) -> User:
         if user_id.lower() in ["me", "self"] and session:
             user_id = session.user_id
@@ -81,15 +81,20 @@ def get_user(*args: Column[Any], require_self_or_admin: bool = False) -> Any:
 
         return user
 
-    if not require_self_or_admin:
-        return Depends(default_dependency)
+    return default_dependency
 
+
+def _get_user_privileged_dependency(*args: Column[Any]) -> Callable[[str, Session], Awaitable[User]]:
     async def self_or_admin_dependency(user_id: str, session: Session = user_auth) -> User:
         if user_id.lower() in ["me", "self"]:
             user_id = session.user_id
         if session.user_id != user_id and not session.user.admin:
             raise PermissionDeniedError
 
-        return await default_dependency(user_id)
+        return await _get_user_dependency(*args)(user_id, None)
 
-    return Depends(self_or_admin_dependency)
+    return self_or_admin_dependency
+
+
+def get_user(*args: Column[Any], require_self_or_admin: bool = False) -> Any:
+    return Depends(_get_user_privileged_dependency(*args) if require_self_or_admin else _get_user_dependency(*args))

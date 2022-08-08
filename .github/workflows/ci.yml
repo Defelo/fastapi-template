@@ -29,6 +29,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
+            .venv
             ~/.cache/pip
             ~/.cache/pypoetry
           key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
@@ -61,6 +62,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
+            .venv
             ~/.cache/pip
             ~/.cache/pypoetry
           key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
@@ -93,6 +95,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
+            .venv
             ~/.cache/pip
             ~/.cache/pypoetry
           key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
@@ -113,7 +116,7 @@ jobs:
 #         GITHUB_TOKEN: ${{ secrets.github_token }}
 
   tests:
-    name: Tests (unittest)
+    name: Tests (pytest+coverage)
     runs-on: ubuntu-latest
 
     steps:
@@ -131,6 +134,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
+            .venv
             ~/.cache/pip
             ~/.cache/pypoetry
           key: ${{ runner.os }}-venv-${{ hashFiles('poetry.lock') }}
@@ -141,7 +145,7 @@ jobs:
           poetry install -n --no-root
 
       - name: Run unit tests with coverage
-        run: poe coverage --xml
+        run: poe coverage --xml --no-check --no-clean
 
       - name: Send coverage report to codeclimate
         env:
@@ -153,6 +157,9 @@ jobs:
           wget -O reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64
           chmod +x reporter
           ./reporter after-build
+
+      - name: Check coverage
+        run: poetry run coverage report
 
   docker_build:
     name: Docker Build

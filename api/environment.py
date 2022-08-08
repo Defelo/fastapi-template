@@ -75,7 +75,7 @@ OAuthProvider = namedtuple(
 )
 OAUTH_PROVIDERS: dict[str, OAuthProvider] = {}
 for var in os.environ:
-    if not (match := re.match(r"^OAUTH_([A-Z0-9_]+)_CLIENT_ID$", var)):
+    if not (match := re.match(r"^OAUTH_([A-Z\d_]+)_CLIENT_ID$", var)):
         continue
 
     provider_id = match.group(1)

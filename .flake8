@@ -1,6 +1,6 @@
 [flake8]
 max-line-length = 120
-ignore = B008,C812,C813,C815,C816,D,E800,F401,F403,F405,I,Q000,RST210,RST213,RST304,WPS,W503
+ignore = B008,C812,C813,C815,C816,D,E800,F401,F403,F405,I,Q000,RST210,RST213,RST304,W503,W503,WPS
 extend-exclude = .venv
 per-file-ignores =
     tests/*: S101,S105

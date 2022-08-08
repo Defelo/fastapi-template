@@ -1,154 +1,139 @@
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, Callable
-from unittest import IsolatedAsyncioTestCase
-from unittest.mock import MagicMock, patch
+import asyncio
+from typing import Any, Callable
+from unittest.mock import AsyncMock, MagicMock
 
+from _pytest.monkeypatch import MonkeyPatch
+from httpx import AsyncClient
+from pytest_mock import MockerFixture
+
+from .utils import import_module, mock_asynccontextmanager
 from api import app
 
-from utils import AsyncMock, import_module, mock_list
+
+def get_decorated_function(
+    fastapi_patch: MagicMock, decorator_name: str, *decorator_args: Any, **decorator_kwargs: Any
+) -> tuple[Any, Callable[..., Any]]:
+    functions: list[Callable[..., Any]] = []
+    decorator = MagicMock(side_effect=functions.append)
+    getattr(fastapi_patch(), decorator_name).side_effect = (
+        lambda *args, **kwargs: decorator if (args, kwargs) == (decorator_args, decorator_kwargs) else MagicMock()
+    )
+    fastapi_patch.reset_mock()
+
+    module = import_module("api.app")
+
+    decorator.assert_called_once()
+    assert len(functions) == 1
+    return module, functions[0]
 
 
-class TestApp(IsolatedAsyncioTestCase):
-    def get_decorated_function(
-        self, fastapi_patch: MagicMock, decorator_name: str, *decorator_args: Any, **decorator_kwargs: Any
-    ) -> tuple[Any, Callable[..., Any]]:
-        functions: list[Callable[..., Any]] = []
-        decorator = MagicMock(side_effect=functions.append)
-        getattr(fastapi_patch(), decorator_name).side_effect = (
-            lambda *args, **kwargs: decorator if (args, kwargs) == (decorator_args, decorator_kwargs) else MagicMock()
-        )
-        fastapi_patch.reset_mock()
+async def test__setup_app__sentry(mocker: MockerFixture) -> None:
+    get_version_mock = mocker.patch("api.app.get_version")
+    setup_sentry_mock = mocker.patch("api.app.setup_sentry")
+    app_mock = mocker.patch("api.app.app")
+    sentry_dsn_mock = mocker.patch("api.app.SENTRY_DSN")
+    mocker.patch("api.app.DEBUG", False)
 
-        module = import_module("api.app")
+    app.setup_app()
 
-        decorator.assert_called_once()
-        self.assertEqual(1, len(functions))
-        return module, functions[0]
+    get_version_mock.assert_called_once_with()
+    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
 
-    @patch("api.app.ROUTERS")
-    @patch("api.app.app")
-    @patch("api.app.SENTRY_DSN", None)
-    @patch("api.app.DEBUG", False)
-    async def test__setup_app(self, app_mock: MagicMock, routers_mock: MagicMock) -> None:
-        routers = mock_list(5)
-        routers_mock.__iter__.return_value = iter(routers.copy())
-        app_mock.include_router.side_effect = routers.remove
 
-        app.setup_app()
+async def test__setup_app__debug(mocker: MockerFixture) -> None:
+    app_mock = mocker.patch("api.app.app")
+    cors_middleware_mock = mocker.patch("api.app.CORSMiddleware")
+    mocker.patch("api.app.SENTRY_DSN", None)
+    mocker.patch("api.app.DEBUG", True)
 
-        self.assertFalse(routers)
+    app.setup_app()
 
-    @patch("api.app.get_version")
-    @patch("api.app.setup_sentry")
-    @patch("api.app.ROUTERS")
-    @patch("api.app.app")
-    @patch("api.app.SENTRY_DSN")
-    @patch("api.app.DEBUG", False)
-    async def test__setup_app__sentry(
-        self,
-        sentry_dsn_mock: MagicMock,
-        app_mock: MagicMock,
-        routers_mock: MagicMock,
-        setup_sentry_mock: MagicMock,
-        get_version_mock: MagicMock,
-    ) -> None:
-        routers = mock_list(5)
-        routers_mock.__iter__.return_value = iter(routers.copy())
-        app_mock.include_router.side_effect = routers.remove
+    app_mock.add_middleware.assert_called_once_with(
+        cors_middleware_mock, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
+    )
 
-        app.setup_app()
 
-        get_version_mock.assert_called_once_with()
-        setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
-        self.assertFalse(routers)
+async def test__db_session(mocker: MockerFixture) -> None:
+    fastapi_patch = mocker.patch("fastapi.FastAPI")
+    expected = MagicMock()
+    request = MagicMock()
 
-    @patch("api.app.ROUTERS")
-    @patch("api.app.CORSMiddleware")
-    @patch("api.app.app")
-    @patch("api.app.SENTRY_DSN", None)
-    @patch("api.app.DEBUG", True)
-    async def test__setup_app__debug(
-        self, app_mock: MagicMock, cors_middleware_mock: MagicMock, routers_mock: MagicMock
-    ) -> None:
-        routers = mock_list(5)
-        routers_mock.__iter__.return_value = iter(routers.copy())
-        app_mock.include_router.side_effect = routers.remove
+    module, db_session = get_decorated_function(fastapi_patch, "middleware", "http")
 
-        app.setup_app()
+    module.db_context, [func_callback], assert_calls = mock_asynccontextmanager(1, None)
+    call_next = AsyncMock(side_effect=lambda _: func_callback() or expected)
 
-        app_mock.add_middleware.assert_called_once_with(
-            cors_middleware_mock, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
-        )
-        self.assertFalse(routers)
+    result = await db_session(request, call_next)
 
-    @patch("api.database.db")
-    @patch("fastapi.FastAPI")
-    async def test__db_session(self, fastapi_patch: MagicMock, db_patch: MagicMock) -> None:
-        _, db_session = self.get_decorated_function(fastapi_patch, "middleware", "http")
+    assert_calls()
+    call_next.assert_called_once_with(request)
+    assert result == expected
 
-        events = []
-        db_patch.create_session.side_effect = lambda: events.append(0)
-        expected = MagicMock()
-        call_next = AsyncMock(side_effect=lambda _: events.append(1) or expected)  # type: ignore
-        request = MagicMock()
-        db_patch.commit = AsyncMock(side_effect=lambda: events.append(2))
-        db_patch.close = AsyncMock(side_effect=lambda: events.append(3))
 
-        result = await db_session(request, call_next)
+async def test__rollback_on_exception(mocker: MockerFixture) -> None:
+    fastapi_patch = mocker.patch("fastapi.FastAPI")
+    db_patch = mocker.patch("api.database.db")
+    db_patch.session.rollback = AsyncMock()
+    http_exception_patch = mocker.patch("starlette.exceptions.HTTPException")
+    http_exception_handler_patch = mocker.patch("fastapi.exception_handlers.http_exception_handler", AsyncMock())
 
-        self.assertEqual([0, 1, 2, 3], events)
-        call_next.assert_called_once_with(request)
-        self.assertEqual(expected, result)
+    _, rollback_on_exception = get_decorated_function(fastapi_patch, "exception_handler", http_exception_patch)
 
-    @patch("api.models.User.initialize", new_callable=AsyncMock)
-    @patch("asyncio.create_task")
-    @patch("api.database.db")
-    @patch("fastapi.FastAPI")
-    async def test__on_startup(
-        self,
-        fastapi_patch: MagicMock,
-        db_patch: MagicMock,
-        create_task_patch: MagicMock,
-        user_initialize_patch: MagicMock,
-    ) -> None:
-        module, on_startup = self.get_decorated_function(fastapi_patch, "on_event", "startup")
-        db_patch.create_tables = AsyncMock()
-        _setup_app = module.setup_app
-        module.setup_app = MagicMock()
-        clean_expired_sessions_loop = module.clean_expired_sessions_loop = MagicMock()
+    result = await rollback_on_exception(request := MagicMock(), exc := MagicMock())
 
-        events = []
-        user_initialize_patch.side_effect = lambda: events.append(1)
+    db_patch.session.rollback.assert_called_once_with()
+    http_exception_handler_patch.assert_called_once_with(request, exc)
+    assert result == await http_exception_handler_patch()
 
-        @asynccontextmanager
-        async def context_manager() -> AsyncIterator[None]:
-            events.append(0)
-            yield
-            events.append(2)
 
-        module.db_context = context_manager
+async def test__clean_expired_sessions_loop(mocker: MockerFixture) -> None:
+    real_sleep = asyncio.sleep
+    cnt = 0
 
-        try:
-            await on_startup()
+    async def clean_expired_sessions() -> None:
+        nonlocal cnt
+        cnt += 1
+        if cnt % 2 == 0:
+            raise Exception("test")
 
-            module.setup_app.assert_called_once_with()
-            db_patch.create_tables.assert_called_once_with()
-            clean_expired_sessions_loop.assert_called_once_with()
-            create_task_patch.assert_called_once_with(clean_expired_sessions_loop())
-            self.assertEqual([0, 1, 2], events)
-        finally:
-            module.setup_app = _setup_app
+    mocker.patch("api.app.asyncio.sleep", lambda _: real_sleep(0))
+    mocker.patch("api.app.clean_expired_sessions", clean_expired_sessions)
 
-    @patch("fastapi.FastAPI")
-    async def test__on_shutdown(self, fastapi_patch: MagicMock) -> None:
-        _, on_shutdown = self.get_decorated_function(fastapi_patch, "on_event", "shutdown")
+    asyncio.create_task(app.clean_expired_sessions_loop())
+    await real_sleep(0.2)
+    assert cnt >= 100
 
-        await on_shutdown()
 
-    @patch("fastapi.FastAPI")
-    async def test__status(self, fastapi_patch: MagicMock) -> None:
-        _, status = self.get_decorated_function(fastapi_patch, "head", "/status", tags=["status"])
+async def test__on_startup(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
+    fastapi_patch = mocker.patch("fastapi.FastAPI")
+    db_patch = mocker.patch("api.database.db")
+    create_task_mock = mocker.patch("asyncio.create_task")
+    user_initialize_mock = mocker.patch("api.models.User.initialize")
 
-        result = await status()
+    module, on_startup = get_decorated_function(fastapi_patch, "on_event", "startup")
+    db_patch.create_tables = AsyncMock()
+    monkeypatch.setattr(module, "setup_app", MagicMock())
+    clean_expired_sessions_loop = module.clean_expired_sessions_loop = MagicMock()
 
-        self.assertIsNone(result)
+    module.db_context, [user_initialize_mock.side_effect], assert_calls = mock_asynccontextmanager(1, None)
+
+    await on_startup()
+
+    module.setup_app.assert_called_once_with()
+    db_patch.create_tables.assert_called_once_with()
+    clean_expired_sessions_loop.assert_called_once_with()
+    create_task_mock.assert_called_once_with(clean_expired_sessions_loop())
+    assert_calls()
+
+
+async def test__on_shutdown(mocker: MockerFixture) -> None:
+    fastapi_patch = mocker.patch("fastapi.FastAPI")
+
+    _, on_shutdown = get_decorated_function(fastapi_patch, "on_event", "shutdown")
+
+    await on_shutdown()
+
+
+async def test__status(client: AsyncClient) -> None:
+    response = await client.head("/status")
+    assert response.status_code == 200

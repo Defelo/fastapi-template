@@ -2,7 +2,6 @@ from asyncio import Event
 from contextvars import ContextVar
 from typing import Any, AsyncIterator, Type, TypeVar, cast
 
-# noinspection PyProtectedMember
 from sqlalchemy import Column
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine

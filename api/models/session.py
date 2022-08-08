@@ -10,7 +10,7 @@ from sqlalchemy import Column, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, relationship
 
 from .user import User
-from ..database import Base, db, delete
+from ..database import Base, db, db_wrapper, delete
 from ..environment import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from ..logger import get_logger
 from ..redis import redis
@@ -38,6 +38,15 @@ class Session(Base):
     last_update: Mapped[datetime] = Column(DateTime)
     refresh_token: Mapped[str] = Column(String(64), unique=True)
 
+    @property
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "device_name": self.device_name,
+            "last_update": self.last_update.timestamp(),
+        }
+
     @staticmethod
     async def create(user_id: str, device_name: str) -> tuple[Session, str, str]:
         refresh_token = secrets.token_urlsafe(64)
@@ -50,15 +59,6 @@ class Session(Base):
         )
         await db.add(session)
         return session, session._generate_access_token(), refresh_token
-
-    @property
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "user_id": self.user_id,
-            "device_name": self.device_name,
-            "last_update": self.last_update.timestamp(),
-        }
 
     def _generate_access_token(self) -> str:
         return encode_jwt(
@@ -94,8 +94,7 @@ class Session(Base):
         await redis.setex(f"session_logout:{self.refresh_token}", ACCESS_TOKEN_TTL, 1)
         await db.delete(self)
 
-    @staticmethod
-    async def clean_expired_sessions() -> None:
-        await db.exec(
-            delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL))
-        )
+
+@db_wrapper
+async def clean_expired_sessions() -> None:
+    await db.exec(delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)))
