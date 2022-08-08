@@ -268,7 +268,7 @@ async def test__get(mocker: MockerFixture) -> None:
     args = mock_list(5)
     kwargs = mock_dict(5, True)
 
-    result = await database.database.DB.get(db, *args, **kwargs)
+    result = await database.database.DB.get(db, *args, **kwargs)  # type: ignore
 
     filter_by_patch.assert_called_once_with(*args, **kwargs)
     db.first.assert_called_once_with(filter_by_patch())
