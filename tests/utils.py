@@ -5,7 +5,7 @@ import sys
 from contextlib import asynccontextmanager
 from functools import partial
 from types import ModuleType
-from typing import Any, AsyncContextManager, AsyncIterator, Callable, TypeVar, cast
+from typing import AsyncContextManager, AsyncIterator, Callable, TypeVar, cast
 from unittest.mock import MagicMock
 
 
