@@ -1,7 +1,10 @@
 from typing import Awaitable, Callable, TypeVar
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
 from .endpoints import ROUTERS
@@ -34,6 +37,12 @@ def setup_app() -> None:
 async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -> T:
     async with db_context():
         return await call_next(request)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def rollback_on_exception(request: Request, exc: HTTPException) -> JSONResponse:
+    await db.session.rollback()
+    return await http_exception_handler(request, exc)
 
 
 @app.on_event("startup")

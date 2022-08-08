@@ -2,8 +2,14 @@ import importlib
 import inspect
 import runpy
 import sys
+from contextlib import asynccontextmanager
+from functools import partial
 from types import ModuleType
+from typing import AsyncContextManager, AsyncIterator, Callable, TypeVar, cast
 from unittest.mock import MagicMock
+
+
+T = TypeVar("T")
 
 
 def mock_list(size: int) -> list[MagicMock]:
@@ -29,3 +35,27 @@ def import_module(name: str | ModuleType) -> ModuleType:
 
 def run_module(module: ModuleType) -> None:
     runpy.run_path(inspect.getfile(module), {}, "__main__")
+
+
+def mock_call_assertions(n: int) -> tuple[list[Callable[[], None]], Callable[[], None]]:
+    events: list[int] = []
+
+    def assert_calls() -> None:
+        assert events == [*range(n)]
+
+    callbacks = [cast(Callable[[], None], partial(events.append, i)) for i in range(n)]
+
+    return callbacks, assert_calls
+
+
+def mock_asynccontextmanager(
+    n: int, value: T
+) -> tuple[Callable[[], AsyncContextManager[T]], list[Callable[[], None]], Callable[[], None]]:
+    [enter_callback, *callbacks, exit_callback], assert_calls = mock_call_assertions(n + 2)
+
+    async def context_manager() -> AsyncIterator[T]:
+        enter_callback()
+        yield value
+        exit_callback()
+
+    return asynccontextmanager(context_manager), callbacks, assert_calls

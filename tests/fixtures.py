@@ -1,4 +1,5 @@
 from typing import Any, AsyncIterator
+from unittest.mock import AsyncMock
 
 import pytest
 from httpx import AsyncClient
@@ -10,8 +11,14 @@ from api.app import app
 
 @pytest.fixture
 async def client() -> AsyncIterator[AsyncClient]:
-    async with AsyncClient(app=app, base_url="http://test", headers={"Authorization": "secret token"}) as client:
+    async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
+
+
+@pytest.fixture
+async def auth_client(client: AsyncClient, mocker: MockerFixture) -> AsyncIterator[AsyncClient]:
+    mocker.patch("api.auth.HTTPAuth._check_token", AsyncMock(return_value=True))
+    yield client
 
 
 @pytest.fixture(autouse=True)

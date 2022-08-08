@@ -1,9 +1,25 @@
-from typing import Any, Type, cast
+from asyncio import get_event_loop
+from concurrent.futures import ThreadPoolExecutor
+from functools import wraps
+from typing import Any, Awaitable, Callable, Type, TypeVar, cast
 
 from pydantic import BaseConfig, BaseModel
 from uvicorn.protocols.http.h11_impl import STATUS_PHRASES
 
 from .exceptions.api_exception import APIException
+
+
+T = TypeVar("T")
+
+executor = ThreadPoolExecutor()
+
+
+def run_in_thread(func: Callable[..., T]) -> Callable[..., Awaitable[T]]:
+    @wraps(func)
+    async def inner(*args: Any, **kwargs: Any) -> T:
+        return await get_event_loop().run_in_executor(executor, lambda: func(*args, **kwargs))
+
+    return inner
 
 
 def responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:

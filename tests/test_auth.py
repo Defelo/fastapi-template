@@ -13,12 +13,10 @@ def test__get_token(auth_header: str | None, token: str) -> None:
     request = MagicMock()
     request.headers = {"Authorization": auth_header} if auth_header is not None else {}
 
-    result = auth.get_token(request)
-
-    assert result == token
+    assert auth.get_token(request) == token
 
 
-async def test__constructor(mocker: MockerFixture) -> None:
+async def test__httpauth_constructor(mocker: MockerFixture) -> None:
     httpbearer_patch = mocker.patch("api.auth.HTTPBearer")
 
     token = MagicMock()
@@ -26,20 +24,20 @@ async def test__constructor(mocker: MockerFixture) -> None:
     http_auth = auth.HTTPAuth(token)
 
     httpbearer_patch.assert_called_once_with()
-    assert token == http_auth._token
-    assert httpbearer_patch() == http_auth.model
-    assert http_auth.__class__.__name__ == http_auth.scheme_name
+    assert http_auth._token == token
+    assert http_auth.model == httpbearer_patch()
+    assert http_auth.scheme_name == http_auth.__class__.__name__
     assert issubclass(auth.HTTPAuth, SecurityBase)
 
 
 @pytest.mark.parametrize("token,ok", [("S3cr3t Token!", True), ("asdf1234", False)])
-async def test__check_token(token: str, ok: bool) -> None:
+async def test__httpauch_check_token(token: str, ok: bool) -> None:
     http_auth = MagicMock()
     http_auth._token = "S3cr3t Token!"
     assert await auth.HTTPAuth._check_token(http_auth, token) == ok
 
 
-async def test__call__invalid_token(mocker: MockerFixture) -> None:
+async def test__httpauch_call__invalid_token(mocker: MockerFixture) -> None:
     get_token = mocker.patch("api.auth.get_token")
 
     request = MagicMock()
@@ -53,7 +51,7 @@ async def test__call__invalid_token(mocker: MockerFixture) -> None:
     http_auth._check_token.assert_called_once_with(get_token())
 
 
-async def test__call__valid_token(mocker: MockerFixture) -> None:
+async def test__httpauth_call__valid_token(mocker: MockerFixture) -> None:
     get_token = mocker.patch("api.auth.get_token")
 
     request = MagicMock()

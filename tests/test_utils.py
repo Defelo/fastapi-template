@@ -1,10 +1,24 @@
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from pytest_mock import MockerFixture
 
-from .utils import mock_dict
+from .utils import mock_dict, mock_list
 from api import utils
+
+
+async def test__run_in_thread() -> None:
+    out = []
+    res = MagicMock()
+    args = tuple(mock_list(5))
+    kwargs = mock_dict(5, True)
+
+    @utils.run_in_thread
+    def func(*_args: MagicMock, **_kwargs: MagicMock) -> MagicMock:
+        out.append((_args, _kwargs))
+        return res
+
+    assert await func(*args, **kwargs) == res
+    assert out == [(args, kwargs)]
 
 
 async def test__responses() -> None:
@@ -53,7 +67,7 @@ async def test__responses() -> None:
 
 
 async def test__get_example() -> None:
-    arg: Any = MagicMock()
+    arg = MagicMock()
     arg.Config.schema_extra = {"example": (expected := MagicMock())}
 
     assert utils.get_example(arg) == expected
@@ -61,11 +75,11 @@ async def test__get_example() -> None:
 
 async def test__example(mocker: MockerFixture) -> None:
     get_example_patch = mocker.patch("api.utils.get_example")
+
+    args = [a := MagicMock(), b := MagicMock()]
     get_example_patch.side_effect = lambda x: MagicMock(
         items=lambda: [(x.first.key, x.first.value), (x.second.key, x.second.value)]
     )
-
-    args = [a := MagicMock(), b := MagicMock()]
     kwargs = mock_dict(5, True)
 
     result = utils.example(*args, **kwargs)

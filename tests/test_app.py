@@ -1,9 +1,11 @@
 from typing import Any, Callable
 from unittest.mock import AsyncMock, MagicMock
 
+from _pytest.monkeypatch import MonkeyPatch
+from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from .utils import import_module
+from .utils import import_module, mock_asynccontextmanager
 from api import app
 
 
@@ -25,23 +27,23 @@ def get_decorated_function(
 
 
 async def test__setup_app__sentry(mocker: MockerFixture) -> None:
-    mocker.patch("api.app.SENTRY_DSN", "some_sentry_dsn")
-    mocker.patch("api.app.DEBUG", False)
+    get_version_mock = mocker.patch("api.app.get_version")
     setup_sentry_mock = mocker.patch("api.app.setup_sentry")
     app_mock = mocker.patch("api.app.app")
-    get_version_mock = mocker.patch("api.app.get_version")
-    get_version_mock.return_value = MagicMock(description="some description")
+    sentry_dsn_mock = mocker.patch("api.app.SENTRY_DSN")
+    mocker.patch("api.app.DEBUG", False)
 
     app.setup_app()
 
-    setup_sentry_mock.assert_called_once_with(app_mock, "some_sentry_dsn", "FastAPI", "some description")
+    get_version_mock.assert_called_once_with()
+    setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
 
 
 async def test__setup_app__debug(mocker: MockerFixture) -> None:
-    mocker.patch("api.app.SENTRY_DSN", None)
-    mocker.patch("api.app.DEBUG", True)
     app_mock = mocker.patch("api.app.app")
     cors_middleware_mock = mocker.patch("api.app.CORSMiddleware")
+    mocker.patch("api.app.SENTRY_DSN", None)
+    mocker.patch("api.app.DEBUG", True)
 
     app.setup_app()
 
@@ -52,42 +54,49 @@ async def test__setup_app__debug(mocker: MockerFixture) -> None:
 
 async def test__db_session(mocker: MockerFixture) -> None:
     fastapi_patch = mocker.patch("fastapi.FastAPI")
-    db_patch = mocker.patch("api.database.db")
-
-    _, db_session = get_decorated_function(fastapi_patch, "middleware", "http")
-
-    events = []
-    db_patch.create_session.side_effect = lambda: events.append(0)
     expected = MagicMock()
-    call_next = AsyncMock(side_effect=lambda _: events.append(1) or expected)  # type: ignore
     request = MagicMock()
-    db_patch.commit = AsyncMock(side_effect=lambda: events.append(2))
-    db_patch.close = AsyncMock(side_effect=lambda: events.append(3))
+
+    module, db_session = get_decorated_function(fastapi_patch, "middleware", "http")
+
+    module.db_context, [func_callback], assert_calls = mock_asynccontextmanager(1, None)
+    call_next = AsyncMock(side_effect=lambda _: func_callback() or expected)
 
     result = await db_session(request, call_next)
 
-    assert events == [0, 1, 2, 3]
+    assert_calls()
     call_next.assert_called_once_with(request)
     assert result == expected
 
 
-async def test__on_startup(mocker: MockerFixture) -> None:
+async def test__rollback_on_exception(mocker: MockerFixture) -> None:
+    fastapi_patch = mocker.patch("fastapi.FastAPI")
+    db_patch = mocker.patch("api.database.db")
+    db_patch.session.rollback = AsyncMock()
+    http_exception_patch = mocker.patch("starlette.exceptions.HTTPException")
+    http_exception_handler_patch = mocker.patch("fastapi.exception_handlers.http_exception_handler", AsyncMock())
+
+    _, rollback_on_exception = get_decorated_function(fastapi_patch, "exception_handler", http_exception_patch)
+
+    result = await rollback_on_exception(request := MagicMock(), exc := MagicMock())
+
+    db_patch.session.rollback.assert_called_once_with()
+    http_exception_handler_patch.assert_called_once_with(request, exc)
+    assert result == await http_exception_handler_patch()
+
+
+async def test__on_startup(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     fastapi_patch = mocker.patch("fastapi.FastAPI")
     db_patch = mocker.patch("api.database.db")
 
     module, on_startup = get_decorated_function(fastapi_patch, "on_event", "startup")
-
     db_patch.create_tables = AsyncMock()
-    _setup_app = module.setup_app
-    module.setup_app = MagicMock()
+    monkeypatch.setattr(module, "setup_app", MagicMock())
 
-    try:
-        await on_startup()
+    await on_startup()
 
-        module.setup_app.assert_called_once_with()
-        db_patch.create_tables.assert_called_once_with()
-    finally:
-        module.setup_app = _setup_app
+    module.setup_app.assert_called_once_with()
+    db_patch.create_tables.assert_called_once_with()
 
 
 async def test__on_shutdown(mocker: MockerFixture) -> None:
@@ -98,9 +107,6 @@ async def test__on_shutdown(mocker: MockerFixture) -> None:
     await on_shutdown()
 
 
-async def test__status(mocker: MockerFixture) -> None:
-    fastapi_patch = mocker.patch("fastapi.FastAPI")
-
-    _, status = get_decorated_function(fastapi_patch, "head", "/status", tags=["status"])
-
-    assert await status() is None
+async def test__status(client: AsyncClient) -> None:
+    response = await client.head("/status")
+    assert response.status_code == 200

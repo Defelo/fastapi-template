@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import Any, AsyncIterator
 from unittest.mock import AsyncMock, MagicMock, call
@@ -7,7 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import DeclarativeMeta, registry
 
-from .utils import import_module, mock_dict, mock_list
+from .utils import import_module, mock_asynccontextmanager, mock_dict, mock_list
 from api import database
 
 
@@ -147,27 +146,17 @@ async def test__create_tables(mocker: MockerFixture) -> None:
 
     db = MagicMock()
 
-    events = []
-
     async def run_sync(coro: Any) -> None:
         assert coro == base_patch.metadata.create_all
-        events.append(1)
+        func_callback()
 
-    @asynccontextmanager
-    async def context_manager() -> AsyncIterator[Any]:
-        events.append(0)
-
-        conn = MagicMock()
-        conn.run_sync = run_sync
-        yield conn
-
-        events.append(2)
-
-    db.engine.begin = context_manager
+    conn = MagicMock()
+    conn.run_sync = run_sync
+    db.engine.begin, [func_callback], assert_calls = mock_asynccontextmanager(1, conn)
 
     await database.database.DB.create_tables(db)
 
-    assert events == [0, 1, 2]
+    assert_calls()
 
 
 async def test__add() -> None:
@@ -435,8 +424,8 @@ async def test__db_context(mocker: MockerFixture) -> None:
 
 async def test__db_wrapper(mocker: MockerFixture) -> None:
     db_context_patch = mocker.patch("api.database.db_context")
+    db_context_patch.side_effect, [func_callback], assert_calls = mock_asynccontextmanager(1, None)
 
-    events = []
     args = mock_list(5)
     kwargs = mock_dict(5, True)
     expected = MagicMock()
@@ -445,22 +434,14 @@ async def test__db_wrapper(mocker: MockerFixture) -> None:
     async def test(*_args: Any, **_kwargs: Any) -> Any:
         assert args == list(_args)
         assert kwargs == _kwargs
-        events.append(1)
+        func_callback()
         return expected
-
-    @asynccontextmanager
-    async def context_manager() -> AsyncIterator[None]:
-        events.append(0)
-        yield
-        events.append(2)
-
-    db_context_patch.side_effect = context_manager
 
     result = await test(*args, **kwargs)
 
     assert result == expected
     db_context_patch.assert_called_once_with()
-    assert events == [0, 1, 2]
+    assert_calls()
     assert test.__name__ == "test"
 
 
