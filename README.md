@@ -110,6 +110,7 @@ poe api
 ```bash
 poe setup           # setup dependencies, .env file and pre-commit hook
 poe api             # start api locally
+poe test            # run unit tests
 poe pre-commit      # run pre-commit checks
   poe lint          # run linter
     poe format      # run auto formatter
@@ -117,6 +118,6 @@ poe pre-commit      # run pre-commit checks
       poe black     # reformat code
     poe mypy        # check typing
     poe flake8      # check code style
-  poe test          # run unit tests
-poe coverage        # run unit tests with coverage
+  poe coverage      # run unit tests with coverage
+poe hash-password   # hash a given password using argon2
 ```
