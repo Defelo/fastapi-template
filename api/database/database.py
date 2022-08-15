@@ -3,7 +3,7 @@ from contextvars import ContextVar
 from typing import Any, AsyncIterator, Type, TypeVar, cast
 
 from sqlalchemy import Column
-from sqlalchemy.engine import URL
+from sqlalchemy.engine import URL, Result
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.future import select as sa_select
 from sqlalchemy.orm import DeclarativeMeta, registry, selectinload
@@ -84,40 +84,8 @@ class Base(metaclass=DeclarativeMeta):
 
 
 class DB:
-    def __init__(
-        self,
-        driver: str,
-        host: str,
-        port: int,
-        database: str,
-        username: str,
-        password: str,
-        pool_recycle: int = 300,
-        pool_size: int = 20,
-        max_overflow: int = 20,
-        echo: bool = False,
-    ):
-        """
-        :param driver: name of the sql connection driver
-        :param host: host of the sql server
-        :param port: port of the sql server
-        :param database: name of the database
-        :param username: name of the sql user
-        :param password: password of the sql user
-        :param echo: whether sql queries should be logged
-        """
-
-        self.engine: AsyncEngine = create_async_engine(
-            URL.create(
-                drivername=driver, username=username, password=password, host=host, port=port, database=database
-            ),
-            pool_pre_ping=True,
-            pool_recycle=pool_recycle,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            echo=echo,
-        )
-
+    def __init__(self, url: URL, **kwargs: Any):
+        self.engine: AsyncEngine = create_async_engine(url, **kwargs)
         self._session: ContextVar[AsyncSession | None] = ContextVar("session", default=None)
         self._close_event: ContextVar[Event | None] = ContextVar("close_event", default=None)
 
@@ -150,35 +118,35 @@ class DB:
         await self.session.delete(obj)
         return obj
 
-    async def exec(self, statement: Executable) -> Any:
+    async def exec(self, statement: Executable | str) -> Result:
         """Execute an sql statement and return the result."""
 
-        return await self.session.execute(statement)
+        return await self.session.execute(cast(Executable, statement))
 
-    async def stream(self, statement: Executable) -> AsyncIterator[Any]:
+    async def stream(self, statement: Executable | str) -> AsyncIterator[Any]:
         """Execute an sql statement and stream the result."""
 
         return cast(AsyncIterator[Any], (await self.session.stream(statement)).scalars())
 
-    async def all(self, statement: Executable) -> list[Any]:
+    async def all(self, statement: Executable | str) -> list[Any]:
         """Execute an sql statement and return all results as a list."""
 
         return [x async for x in await self.stream(statement)]
 
-    async def first(self, statement: Executable) -> Any | None:
+    async def first(self, statement: Executable | str) -> Any | None:
         """Execute an sql statement and return the first result."""
 
         return (await self.exec(statement)).scalar()
 
-    async def exists(self, statement: Executable, *args: Column[Any], **kwargs: Any) -> bool:
+    async def exists(self, statement: Executable | str, *args: Column[Any], **kwargs: Any) -> bool:
         """Execute an sql statement and return whether it returned at least one row."""
 
-        return cast(bool, await self.first(exists(statement, *args, **kwargs).select()))
+        return cast(bool, await self.first(exists(cast(Executable, statement), *args, **kwargs).select()))
 
-    async def count(self, statement: Executable, *args: Column[Any]) -> int:
+    async def count(self, statement: Select) -> int:
         """Execute an sql statement and return the number of returned rows."""
 
-        return cast(int, await self.first(select(count()).select_from(statement, *args)))
+        return cast(int, await self.first(select(count()).select_from(statement.subquery())))
 
     async def get(self, cls: Type[T], *args: Column[Any], **kwargs: Any) -> T | None:
         """Shortcut for first(filter_by(...))"""
@@ -225,12 +193,15 @@ def get_database() -> DB:
     """
 
     return DB(
-        driver=DB_DRIVER,
-        host=DB_HOST,
-        port=DB_PORT,
-        database=DB_DATABASE,
-        username=DB_USERNAME,
-        password=DB_PASSWORD,
+        url=URL.create(
+            drivername=DB_DRIVER,
+            username=DB_USERNAME,
+            password=DB_PASSWORD,
+            host=DB_HOST,
+            port=DB_PORT,
+            database=DB_DATABASE,
+        ),
+        pool_pre_ping=True,
         pool_recycle=POOL_RECYCLE,
         pool_size=POOL_SIZE,
         max_overflow=MAX_OVERFLOW,

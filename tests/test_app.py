@@ -20,7 +20,7 @@ def get_decorated_function(
     )
     fastapi_patch.reset_mock()
 
-    module = import_module("api.app")
+    module = import_module(app)
 
     decorator.assert_called_once()
     assert len(functions) == 1
@@ -86,7 +86,9 @@ async def test__rollback_on_exception(mocker: MockerFixture) -> None:
     assert result == await http_exception_handler_patch()
 
 
-async def test__clean_expired_sessions_loop(mocker: MockerFixture) -> None:
+async def test__clean_expired_sessions_loop() -> None:
+    module: Any = import_module("api.app")
+
     real_sleep = asyncio.sleep
     cnt = 0
 
@@ -96,10 +98,10 @@ async def test__clean_expired_sessions_loop(mocker: MockerFixture) -> None:
         if cnt % 2 == 0:
             raise Exception("test")
 
-    mocker.patch("api.app.asyncio.sleep", lambda _: real_sleep(0))
-    mocker.patch("api.app.clean_expired_sessions", clean_expired_sessions)
+    module.asyncio.sleep = lambda _: real_sleep(0)
+    module.clean_expired_sessions = clean_expired_sessions
 
-    asyncio.create_task(app.clean_expired_sessions_loop())
+    asyncio.create_task(module.clean_expired_sessions_loop())
     await real_sleep(0.2)
     assert cnt >= 100
 
