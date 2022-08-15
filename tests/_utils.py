@@ -26,11 +26,13 @@ def reload_module(module: ModuleType) -> ModuleType:
 
 def import_module(name: str | ModuleType) -> ModuleType:
     if isinstance(name, ModuleType):
-        return reload_module(name)
-    if module := sys.modules.get(name):
-        return importlib.reload(module)
+        return import_module(name.__name__)
 
-    return importlib.import_module(name)
+    old_module = sys.modules.pop(name, None)
+    new_module = importlib.import_module(name)
+    if old_module:
+        sys.modules[name] = old_module
+    return new_module
 
 
 def run_module(module: ModuleType) -> None:

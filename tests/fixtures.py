@@ -2,11 +2,19 @@ from typing import Any, AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
+from sqlalchemy.ext.asyncio import create_async_engine
 
-from ._utils import import_module
 from api.app import app
+from api.database import db
+
+
+@pytest.fixture(autouse=True)
+async def database(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(db, "engine", create_async_engine("sqlite+aiosqlite:///:memory:"))
+    await db.create_tables()
 
 
 @pytest.fixture
@@ -19,13 +27,3 @@ async def client() -> AsyncIterator[AsyncClient]:
 async def auth_client(client: AsyncClient, mocker: MockerFixture) -> AsyncIterator[AsyncClient]:
     mocker.patch("api.auth.HTTPAuth._check_token", AsyncMock(return_value=True))
     yield client
-
-
-@pytest.fixture(autouse=True)
-async def reload_modules_after_mock(request: Any, mocker: MockerFixture) -> AsyncIterator[None]:
-    yield
-
-    if marker := request.node.get_closest_marker("reload_modules"):
-        mocker.stopall()
-        for module in marker.args:
-            import_module(module)

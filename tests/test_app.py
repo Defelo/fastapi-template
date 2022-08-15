@@ -19,7 +19,7 @@ def get_decorated_function(
     )
     fastapi_patch.reset_mock()
 
-    module = import_module("api.app")
+    module = import_module(app)
 
     decorator.assert_called_once()
     assert len(functions) == 1

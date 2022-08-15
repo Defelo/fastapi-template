@@ -101,35 +101,14 @@ async def test__base_constructor() -> None:
 
 
 async def test__constructor(mocker: MockerFixture) -> None:
-    url_create_patch = mocker.patch("api.database.database.URL.create")
     create_async_engine_patch = mocker.patch("api.database.database.create_async_engine")
 
-    driver = MagicMock()
-    host = MagicMock()
-    port = MagicMock()
-    db = MagicMock()
-    username = MagicMock()
-    password = MagicMock()
-    pool_recycle = MagicMock()
-    pool_size = MagicMock()
-    max_overflow = MagicMock()
-    echo = MagicMock()
+    url = MagicMock()
+    kwargs = mock_dict(5, string_keys=True)
 
-    result = database.database.DB(
-        driver, host, port, db, username, password, pool_recycle, pool_size, max_overflow, echo
-    )
+    result = database.database.DB(url, **kwargs)
 
-    url_create_patch.assert_called_once_with(
-        drivername=driver, username=username, password=password, host=host, port=port, database=db
-    )
-    create_async_engine_patch.assert_called_once_with(
-        url_create_patch(),
-        pool_pre_ping=True,
-        pool_recycle=pool_recycle,
-        pool_size=pool_size,
-        max_overflow=max_overflow,
-        echo=echo,
-    )
+    create_async_engine_patch.assert_called_once_with(url, **kwargs)
     assert result.engine == create_async_engine_patch()
 
     assert isinstance(result._session, ContextVar)
@@ -250,13 +229,14 @@ async def test__db__count(mocker: MockerFixture) -> None:
     select_patch = mocker.patch("api.database.database.select")
 
     db = AsyncMock()
-    args = mock_list(5)
+    arg = MagicMock()
 
-    result = await database.database.DB.count(db, *args)
+    result = await database.database.DB.count(db, arg)
 
     count_patch.assert_called_once_with()
     select_patch.assert_called_once_with(count_patch())
-    select_patch().select_from.assert_called_once_with(*args)
+    arg.subquery.assert_called_once_with()
+    select_patch().select_from.assert_called_once_with(arg.subquery())
     db.first.assert_called_once_with(select_patch().select_from())
     assert result == await db.first()
 
@@ -380,6 +360,8 @@ async def test__wait_for_close_event() -> None:
 
 
 async def test__get_database(mocker: MockerFixture) -> None:
+    url_create_patch = mocker.patch("api.database.database.URL.create")
+
     db_patch = mocker.patch("api.database.database.DB")
     db_driver_patch = mocker.patch("api.database.database.DB_DRIVER")
     db_host_patch = mocker.patch("api.database.database.DB_HOST")
@@ -394,13 +376,18 @@ async def test__get_database(mocker: MockerFixture) -> None:
 
     result = database.database.get_database()
 
-    db_patch.assert_called_once_with(
-        driver=db_driver_patch,
+    url_create_patch.assert_called_once_with(
+        drivername=db_driver_patch,
+        username=db_username_patch,
+        password=db_password_patch,
         host=db_host_patch,
         port=db_port_patch,
         database=db_database_patch,
-        username=db_username_patch,
-        password=db_password_patch,
+    )
+
+    db_patch.assert_called_once_with(
+        url=url_create_patch(),
+        pool_pre_ping=True,
         pool_recycle=pool_recycle_patch,
         pool_size=pool_size_patch,
         max_overflow=max_overflow_patch,
@@ -445,7 +432,6 @@ async def test__db_wrapper(mocker: MockerFixture) -> None:
     assert test.__name__ == "test"
 
 
-@pytest.mark.reload_modules("api.database")
 async def test__db(mocker: MockerFixture) -> None:
     get_database_mock = mocker.patch("api.database.database.get_database")
 

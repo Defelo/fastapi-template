@@ -34,6 +34,7 @@ pytest = "^7.1.2"
 coverage = "^6.4"
 pytest-asyncio = "^0.19.0"
 pytest-mock = "^3.8.2"
+aiosqlite = "^0.17.0"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
@@ -110,7 +111,7 @@ plugins = ["sqlalchemy.ext.mypy.plugin"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-markers = ["reload_modules"]
+markers = []
 
 [tool.coverage.run]
 branch = true
