@@ -50,7 +50,7 @@ mypy = "mypy ."
 lint = ["format", "mypy", "flake8"]
 test = "pytest -v tests"
 pre-commit = ["lint", "coverage"]
-hash-password = """python -c 'from api.utils import password_hasher; import sys; print(password_hasher.hash(sys.argv[1]))'"""
+hash-password = """python -c 'from api.utils import password_hasher; import sys, getpass; print(password_hasher.hash(sys.argv[1] if len(sys.argv) > 1 else getpass.getpass()))'"""
 
 [tool.poe.tasks.coverage]
 shell = """
