@@ -1,15 +1,15 @@
 import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .user import User
 from ..utils import example, get_example
 
 
 class Session(BaseModel):
-    id: str
-    user_id: str
-    device_name: str
-    last_update: float
+    id: str = Field(description="Unique identifier for the session")
+    user_id: str = Field(description="Unique identifier for the user")
+    device_name: str = Field(description="Name of the device")
+    last_update: float = Field(description="Timestamp of the last time an access token was created")
 
     Config = example(
         id="74193090-b88c-4984-9e51-da9cd3372e62",
@@ -20,18 +20,20 @@ class Session(BaseModel):
 
 
 class Login(BaseModel):
-    name: str
-    password: str
-    mfa_code: str | None = ""
-    recovery_code: str | None = ""
-    recaptcha_response: str | None
+    name: str = Field(description="Unique username")
+    password: str = Field(description="Password of the user")
+    mfa_code: str | None = Field(description="MFA TOTP code")
+    recovery_code: str | None = Field(description="Recovery code for MFA")
+    recaptcha_response: str | None = Field(
+        description="Recaptcha response (required if there have been too many failed login attempts)"
+    )
 
 
 class LoginResponse(BaseModel):
-    user: User
-    session: Session
-    access_token: str
-    refresh_token: str
+    user: User = Field(description="User that was logged in")
+    session: Session = Field(description="Session that was created")
+    access_token: str = Field(description="Access token that can be used to authenticate requests")
+    refresh_token: str = Field(description="Refresh token that can be used to request a new access token")
 
     Config = example(  # noqa: S106
         user=get_example(User),
@@ -44,5 +46,7 @@ class LoginResponse(BaseModel):
 
 
 class OAuthLoginResponse(BaseModel):
-    login: LoginResponse | None
-    register_token: str | None
+    login: LoginResponse | None = Field(description="Login response if the user was successfully logged in")
+    register_token: str | None = Field(
+        description="OAuth registration token for user creation if no user is linked to the remote account yet"
+    )

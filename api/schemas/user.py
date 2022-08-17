@@ -9,14 +9,14 @@ MFA_CODE_REGEX = r"^\d{6}$"
 
 
 class User(BaseModel):
-    id: str
-    name: str
-    registration: float
-    last_login: float | None
-    enabled: bool
-    admin: bool
-    password: bool
-    mfa_enabled: bool
+    id: str = Field(description="Unique identifier for the user")
+    name: str = Field(description="Unique username")
+    registration: float = Field(description="Timestamp of the user's registration")
+    last_login: float | None = Field(description="Timestamp of the user's last successful login")
+    enabled: bool = Field(description="Whether the user is enabled")
+    admin: bool = Field(description="Whether the user is an administrator")
+    password: bool = Field(description="Whether the user has a password (if not, login is only possible via OAuth)")
+    mfa_enabled: bool = Field(description="Whether the user has enabled MFA")
 
     Config = example(
         id="a13e63b1-9830-4604-8b7f-397d2c29955e",
@@ -31,23 +31,25 @@ class User(BaseModel):
 
 
 class UsersResponse(BaseModel):
-    total: int
-    users: list[User]
+    total: int = Field(description="Total number of users matching the query")
+    users: list[User] = Field(description="Paginated list of users matching the query")
 
     Config = example(total=1, users=[get_example(User)])
 
 
 class CreateUser(BaseModel):
-    name: str = Field(..., regex=USERNAME_REGEX)
-    password: str | None = Field(None, regex=PASSWORD_REGEX)
-    oauth_register_token: str | None
-    recaptcha_response: str | None
-    enabled: bool = True
-    admin: bool = False
+    name: str = Field(regex=USERNAME_REGEX, description="Unique username")
+    password: str | None = Field(regex=PASSWORD_REGEX, description="Password of the user")
+    oauth_register_token: str | None = Field(description="OAuth registration token returned by `POST /sessions/oauth`")
+    recaptcha_response: str | None = Field(description="Recaptcha response (required if not requested by an admin)")
+    enabled: bool = Field(True, description="Whether the user is enabled")
+    admin: bool = Field(False, description="Whether the user is an administrator")
 
 
 class UpdateUser(BaseModel):
-    name: str | None = Field(None, regex=USERNAME_REGEX)
-    password: str | None = Field(None, regex=PASSWORD_REGEX)
-    enabled: bool | None
-    admin: bool | None
+    name: str | None = Field(regex=USERNAME_REGEX, description="Change the username")
+    password: str | None = Field(
+        regex=PASSWORD_REGEX, description="Change the password (if set to `null`, the password is removed)"
+    )
+    enabled: bool | None = Field(description="Change whether the user is enabled")
+    admin: bool | None = Field(description="Change whether the user is an administrator")
