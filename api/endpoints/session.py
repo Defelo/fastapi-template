@@ -1,3 +1,5 @@
+"""Endpoints for session management"""
+
 import hashlib
 from typing import Any
 from uuid import uuid4
@@ -46,14 +48,22 @@ async def _check_mfa(user: models.User, mfa_code: str | None, recovery_code: str
 
 @router.get("/session", responses=user_responses(Session))
 async def get_current_session(session: models.Session = user_auth) -> Any:
-    """Get current session"""
+    """
+    Return the current session.
+
+    *Requirements:* **USER**
+    """
 
     return session.serialize
 
 
 @router.get("/sessions/{user_id}", responses=admin_responses(list[Session], UserNotFoundError))
 async def get_sessions(user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Get sessions of a given user"""
+    """
+    Return all sessions of a user.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     return [session.serialize async for session in await db.stream(filter_by(models.Session, user_id=user.id))]
 
@@ -63,7 +73,21 @@ async def get_sessions(user: models.User = get_user(require_self_or_admin=True))
     responses=responses(LoginResponse, RecaptchaError, InvalidCredentialsError, UserDisabledError, InvalidCodeError),
 )
 async def login(data: Login, request: Request) -> Any:
-    """Create a new session"""
+    """
+    Create a new session via username/password authentication.
+
+    The client should use the following procedure to login:
+    1. Try to login with name and password only.
+    2. If a `RecaptchaError` is raised, ask the user to solve the captcha (get the recaptcha sitekey from
+       `GET /recaptcha`) and repeat the request with the obtained recaptcha response. Go back to step 2.
+    3. If a `InvalidCredentialsError` is raised, try again with a different username or password. Go back to step 2.
+    4. If a `InvalidCodeError` is raised, MFA is enabled. Try again with the current MFA code or a recovery code.
+       Go back to step 2.
+    5. If a `UserDisabledError` is raised, the user is disabled and a session cannot be created.
+    6. If the request was successful, the response contains an access token and a refresh token for authentication.
+
+    The value of the `User-agent` header is used as the device name of the created session.
+    """
 
     name_hash: str = hashlib.sha256(data.name.lower().encode()).hexdigest()
     failed_attempts = int(await redis.get(key := f"failed_login_attempts:{name_hash}") or "0")
@@ -102,7 +126,26 @@ async def login(data: Login, request: Request) -> Any:
     responses=responses(OAuthLoginResponse, ProviderNotFoundError, InvalidOAuthCodeError, UserDisabledError),
 )
 async def oauth_login(data: OAuthLogin, request: Request) -> Any:
-    """Create a new session"""
+    """
+    Create a new session via OAuth.
+
+    The client should use the following procedure to login:
+    1. Get the list of available OAuth providers from `GET /oauth/providers`.
+    2. Redirect to the `authorize_url` of the provider after adding the following parameters to the query string:
+        - `redirect_uri`: The URL to redirect to after the authorization process is complete.
+        - `state`: The `id` of the OAuth provider.
+    3. After the authorization process is complete, the client will be redirected to the `redirect_uri` with the
+    following query parameters:
+        - `code`: The authorization code.
+        - `state`: The `id` of the OAuth provider.
+    4. Send the authorization code to this endpoint.
+    5. If a `UserDisabledError` is raised, the user is disabled and a session cannot be created.
+    6. If the request was successful, the response contains either
+        - an access token and a refresh token for authentication, or
+        - a registration token for the `POST /users` endpoint to create a new user that is linked to the OAuth provider.
+
+    The value of the `User-agent` header is used as the device name of the created session.
+    """
 
     remote_user_id, display_name = await resolve_code(data)
     connection: models.OAuthUserConnection | None = await db.get(
@@ -140,7 +183,11 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     "/sessions/{user_id}", dependencies=[admin_auth], responses=admin_responses(LoginResponse, UserNotFoundError)
 )
 async def impersonate(request: Request, user: models.User = get_user()) -> Any:
-    """Impersonate a specific user"""
+    """
+    Impersonate a specific user by creating a new session for them.
+
+    *Requirements:* **ADMIN**
+    """
 
     session, access_token, refresh_token = await user.create_session(request.headers.get("User-agent", "")[:256])
     return {
@@ -152,8 +199,13 @@ async def impersonate(request: Request, user: models.User = get_user()) -> Any:
 
 
 @router.put("/session", responses=responses(LoginResponse, InvalidRefreshTokenError))
-async def refresh(refresh_token: str = Body(..., embed=True)) -> Any:
-    """Refresh access token and refresh token"""
+async def refresh(refresh_token: str = Body(embed=True, description="The refresh token of an existing session")) -> Any:
+    """
+    Refresh access token and refresh token of an existing session.
+
+    *Note:* The old refresh token is invalidated. To refresh the session again later, use the new refresh token that is
+    returned by this endpoint.
+    """
 
     try:
         session, access_token, refresh_token = await models.Session.refresh(refresh_token)
@@ -170,7 +222,11 @@ async def refresh(refresh_token: str = Body(..., embed=True)) -> Any:
 
 @router.delete("/session", responses=user_responses(bool))
 async def logout_current_session(session: models.Session = user_auth) -> Any:
-    """Delete current session"""
+    """
+    Delete the current session.
+
+    *Requirements:* **USER**
+    """
 
     await session.logout()
     return True
@@ -178,7 +234,11 @@ async def logout_current_session(session: models.Session = user_auth) -> Any:
 
 @router.delete("/sessions/{user_id}", responses=admin_responses(bool, UserNotFoundError))
 async def logout(user: models.User = get_user(models.User.sessions, require_self_or_admin=True)) -> Any:
-    """Delete all sessions of a given user"""
+    """
+    Delete all sessions of a given user.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     await user.logout()
     return True
@@ -188,7 +248,11 @@ async def logout(user: models.User = get_user(models.User.sessions, require_self
     "/sessions/{user_id}/{session_id}", responses=admin_responses(bool, UserNotFoundError, SessionNotFoundError)
 )
 async def logout_session(session_id: str, user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Delete a specific session of a given user"""
+    """
+    Delete a specific session of a given user.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     session: models.Session | None = await db.get(models.Session, id=session_id, user_id=user.id)
     if not session:

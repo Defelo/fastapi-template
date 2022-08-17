@@ -1,18 +1,18 @@
 """
 ## Authentication
 - To authenticate requests, the `Authorization` header must contain a valid access token (JWT which contains the user's
-ID and the session ID).
+  ID and the session ID).
 - The access token can be obtained by logging in to an exising account (see `POST /sessions` and `POST /sessions/oauth`)
-or by creating an account (see `POST /users`). This access token is only valid for a short period of time
-(usually 5 minutes).
+  or by creating an account (see `POST /users`). This access token is only valid for a short period of time
+  (usually 5 minutes).
 - If the access token is expired, a new access token can be obtained by using the refresh token (see `PUT /session`)
-which is also returned when creating a session. This will also invalidate the refresh token and generate a new one.
+  which is also returned when creating a session. This will also invalidate the refresh token and generate a new one.
 - If the refresh token is not used to refresh the session within a configured period of time (usually 30 days) the
-session expires and the user must log in again on this device.
+  session expires and the user must log in again on this device.
 
 ## Special parameters
 - In addition to the usual user ids the `user_id` path parameter used in most endpoints also accepts the special values
-`me` and `self` which refer to the currently authenticated user.
+  `me` and `self` which refer to the currently authenticated user.
 
 ## Requirements
 Some endpoints require one or more of the following conditions to be met:

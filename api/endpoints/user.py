@@ -100,11 +100,13 @@ async def get_user_by_id(user: models.User = get_user(require_self_or_admin=True
 )
 async def create_user(data: CreateUser, request: Request, admin: bool = is_admin) -> Any:
     """
-    Create a new user.
+    Create a new user and a new session for them.
 
     If the **ADMIN** requirement is *not* met:
     - The user is always created as a regular user (`"enabled": true, "admin": false`).
     - A recaptcha response is required if recaptcha is enabled (see `GET /recaptcha`).
+
+    The value of the `User-agent` header is used as the device name of the created session.
     """
 
     if not data.oauth_register_token and not data.password:
