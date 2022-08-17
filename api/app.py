@@ -37,6 +37,7 @@ from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .models import User
 from .models.session import clean_expired_sessions
+from .utils import add_endpoint_links_to_openapi_docs
 from .version import get_version
 
 
@@ -50,6 +51,8 @@ for router in ROUTERS:
 
 
 def setup_app() -> None:
+    add_endpoint_links_to_openapi_docs(app.openapi())
+
     if SENTRY_DSN:
         logger.debug("initializing sentry")
         setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
