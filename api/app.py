@@ -23,7 +23,7 @@ Some endpoints require one or more of the following conditions to be met:
 
 
 import asyncio
-from typing import Awaitable, Callable, TypeVar
+from typing import Any, Awaitable, Callable, TypeVar
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -45,9 +45,13 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="FastAPI", description=__doc__, version=get_version().description, root_path=ROOT_PATH)
-for router in ROUTERS:
+tags: list[Any] = []
+app = FastAPI(
+    title="FastAPI", description=__doc__, version=get_version().description, root_path=ROOT_PATH, openapi_tags=tags
+)
+for name, (router, description) in ROUTERS.items():
     app.include_router(router)
+    tags.append({"name": name, "description": description})
 
 
 def setup_app() -> None:

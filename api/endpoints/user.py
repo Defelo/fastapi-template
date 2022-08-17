@@ -1,3 +1,5 @@
+"""Endpoints for user management"""
+
 import hashlib
 from typing import Any
 
