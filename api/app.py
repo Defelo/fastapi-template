@@ -1,3 +1,27 @@
+"""
+## Authentication
+- To authenticate requests, the `Authorization` header must contain a valid access token (JWT which contains the user's
+ID and the session ID).
+- The access token can be obtained by logging in to an exising account (see `POST /sessions` and `POST /sessions/oauth`)
+or by creating an account (see `POST /users`). This access token is only valid for a short period of time
+(usually 5 minutes).
+- If the access token is expired, a new access token can be obtained by using the refresh token (see `PUT /session`)
+which is also returned when creating a session. This will also invalidate the refresh token and generate a new one.
+- If the refresh token is not used to refresh the session within a configured period of time (usually 30 days) the
+session expires and the user must log in again on this device.
+
+## Special parameters
+- In addition to the usual user ids the `user_id` path parameter used in most endpoints also accepts the special values
+`me` and `self` which refer to the currently authenticated user.
+
+## Requirements
+Some endpoints require one or more of the following conditions to be met:
+- **USER**: The user is authenticated and has a valid session.
+- **SELF**: The authenticated user must be the same as the affected user. Requires **USER**.
+- **ADMIN**: The authenticated user must be an admin. Requires **USER**.
+"""
+
+
 import asyncio
 from typing import Awaitable, Callable, TypeVar
 
@@ -20,7 +44,7 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
+app = FastAPI(title="FastAPI", description=__doc__, version=get_version().description, root_path=ROOT_PATH)
 for router in ROUTERS:
     app.include_router(router)
 
