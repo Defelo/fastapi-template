@@ -1,3 +1,5 @@
+"""OAuth related endpoints"""
+
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -72,7 +74,7 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
 
 @router.get("/oauth/providers", responses=responses(list[OAuthProvider]))
 async def get_oauth_providers() -> Any:
-    """Return a list of all supported OAuth providers"""
+    """Return a list of all available OAuth providers."""
 
     return [
         {
@@ -88,7 +90,11 @@ async def get_oauth_providers() -> Any:
 async def get_oauth_connections(
     user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True)
 ) -> Any:
-    """Get oauth connections"""
+    """
+    Return a list of all OAuth connections for the given user.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     return [connection.serialize for connection in user.oauth_connections]
 
@@ -100,7 +106,13 @@ async def get_oauth_connections(
     ),
 )
 async def create_oauth_connection(login: OAuthLogin, user: models.User = get_user(require_self_or_admin=True)) -> Any:
-    """Create new oauth connection"""
+    """
+    Create a new OAuth connection for the given user.
+
+    The client can use almost the same procedure as described in the `POST /sessions/oauth` endpoint documentation.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     user_id, display_name = await resolve_code(login)
 
@@ -119,7 +131,11 @@ async def create_oauth_connection(login: OAuthLogin, user: models.User = get_use
 async def delete_oauth_connection(
     connection_id: str, user: models.User = get_user(models.User.oauth_connections, require_self_or_admin=True)
 ) -> Any:
-    """Delete an oauth connection"""
+    """
+    Delete an existing OAuth connection.
+
+    *Requirements:* **SELF** or **ADMIN**
+    """
 
     if not user.password and len(user.oauth_connections) <= 1:
         raise CannotDeleteLastLoginMethodError
