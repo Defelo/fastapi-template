@@ -1,3 +1,5 @@
+"""Endpoints for ReCaptcha configuration"""
+
 from typing import Any, cast
 
 from fastapi import APIRouter
@@ -11,6 +13,10 @@ router = APIRouter(tags=["recaptcha"])
 
 @router.get("/recaptcha", responses=responses(cast(type, str | None)))
 async def get_recpatcha_sitekey() -> Any:
-    """Get ReCaptcha sitekey"""
+    """
+    Return the public ReCaptcha sitekey.
+
+    If ReCaptcha is disabled, `null` is returned instead.
+    """
 
     return RECAPTCHA_SITEKEY if recaptcha_enabled() else None
