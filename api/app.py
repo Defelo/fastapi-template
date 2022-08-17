@@ -100,6 +100,6 @@ async def on_shutdown() -> None:
     pass
 
 
-@app.head("/status", tags=["status"])
+@app.head("/status", include_in_schema=False)
 async def status() -> None:
     pass
