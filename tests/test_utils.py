@@ -7,6 +7,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import jwt
 import pytest
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 
 from .utils import mock_asynccontextmanager, mock_dict, mock_list
@@ -230,6 +232,45 @@ async def test__example(mocker: MockerFixture) -> None:
             **kwargs,
         }
     }
+
+
+async def test__add_endpoint_links_to_openapi_docs() -> None:
+    app = FastAPI(
+        description="`GET /test` test `POST /foobar`",
+        openapi_tags=[{"name": "test", "description": "asdf `GET /test`"}],
+    )
+
+    class Model(BaseModel):
+        test: str = Field(description="xyz `POST /foobar`")
+
+    @app.get("/test", tags=["test"], responses=utils.responses(Model))
+    async def test() -> None:
+        """Test endpoint. `POST /foobar`"""
+        pass
+
+    @app.post("/foobar", tags=["test"])
+    async def foobar() -> None:
+        """Foobar endpoint. `GET /test`"""
+        pass
+
+    utils.add_endpoint_links_to_openapi_docs(app.openapi())
+    schema = app.openapi()
+    assert (
+        schema["info"]["description"]
+        == "[`GET /test`](docs#/test/test_test_get) test [`POST /foobar`](docs#/test/foobar_foobar_post)"
+    )
+    assert schema["tags"][0]["description"] == "asdf [`GET /test`](docs#/test/test_test_get)"
+    assert (
+        schema["paths"]["/test"]["get"]["description"]
+        == "Test endpoint. [`POST /foobar`](docs#/test/foobar_foobar_post)"
+    )
+    assert (
+        schema["paths"]["/foobar"]["post"]["description"] == "Foobar endpoint. [`GET /test`](docs#/test/test_test_get)"
+    )
+    assert (
+        schema["components"]["schemas"]["Model"]["properties"]["test"]["description"]
+        == "xyz [`POST /foobar`](docs#/test/foobar_foobar_post)"
+    )
 
 
 @pytest.mark.parametrize(

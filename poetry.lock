@@ -230,7 +230,7 @@ pycparser = "*"
 
 [[package]]
 name = "charset-normalizer"
-version = "2.1.0"
+version = "2.1.1"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
 category = "main"
 optional = false
@@ -260,7 +260,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "coverage"
-version = "6.4.3"
+version = "6.4.4"
 description = "Code coverage measurement for Python"
 category = "dev"
 optional = false
@@ -295,7 +295,7 @@ python-versions = "*"
 
 [[package]]
 name = "fastapi"
-version = "0.79.0"
+version = "0.79.1"
 description = "FastAPI framework, high performance, easy to learn, fast to code, ready for production"
 category = "main"
 optional = false
@@ -306,10 +306,10 @@ pydantic = ">=1.6.2,<1.7 || >1.7,<1.7.1 || >1.7.1,<1.7.2 || >1.7.2,<1.7.3 || >1.
 starlette = "0.19.1"
 
 [package.extras]
-all = ["requests (>=2.24.0,<3.0.0)", "jinja2 (>=2.11.2,<4.0.0)", "python-multipart (>=0.0.5,<0.0.6)", "itsdangerous (>=1.1.0,<3.0.0)", "pyyaml (>=5.3.1,<7.0.0)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)", "orjson (>=3.2.1,<4.0.0)", "email_validator (>=1.1.1,<2.0.0)", "uvicorn[standard] (>=0.12.0,<0.18.0)"]
-dev = ["python-jose[cryptography] (>=3.3.0,<4.0.0)", "passlib[bcrypt] (>=1.7.2,<2.0.0)", "autoflake (>=1.4.0,<2.0.0)", "flake8 (>=3.8.3,<4.0.0)", "uvicorn[standard] (>=0.12.0,<0.18.0)", "pre-commit (>=2.17.0,<3.0.0)"]
-doc = ["mkdocs (>=1.1.2,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs-markdownextradata-plugin (>=0.1.7,<0.3.0)", "typer (>=0.4.1,<0.5.0)", "pyyaml (>=5.3.1,<7.0.0)"]
-test = ["pytest (>=6.2.4,<7.0.0)", "pytest-cov (>=2.12.0,<4.0.0)", "mypy (==0.910)", "flake8 (>=3.8.3,<4.0.0)", "black (==22.3.0)", "isort (>=5.0.6,<6.0.0)", "requests (>=2.24.0,<3.0.0)", "httpx (>=0.14.0,<0.19.0)", "email_validator (>=1.1.1,<2.0.0)", "sqlalchemy (>=1.3.18,<1.5.0)", "peewee (>=3.13.3,<4.0.0)", "databases[sqlite] (>=0.3.2,<0.6.0)", "orjson (>=3.2.1,<4.0.0)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)", "python-multipart (>=0.0.5,<0.0.6)", "flask (>=1.1.2,<3.0.0)", "anyio[trio] (>=3.2.1,<4.0.0)", "types-ujson (==4.2.1)", "types-orjson (==3.6.2)", "types-dataclasses (==0.6.5)"]
+test = ["types-dataclasses (==0.6.5)", "types-orjson (==3.6.2)", "types-ujson (==4.2.1)", "anyio[trio] (>=3.2.1,<4.0.0)", "flask (>=1.1.2,<3.0.0)", "python-multipart (>=0.0.5,<0.0.6)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)", "orjson (>=3.2.1,<4.0.0)", "databases[sqlite] (>=0.3.2,<0.6.0)", "peewee (>=3.13.3,<4.0.0)", "sqlalchemy (>=1.3.18,<1.5.0)", "email_validator (>=1.1.1,<2.0.0)", "httpx (>=0.14.0,<0.19.0)", "requests (>=2.24.0,<3.0.0)", "isort (>=5.0.6,<6.0.0)", "black (==22.3.0)", "flake8 (>=3.8.3,<4.0.0)", "mypy (==0.910)", "pytest-cov (>=2.12.0,<4.0.0)", "pytest (>=6.2.4,<7.0.0)"]
+doc = ["pyyaml (>=5.3.1,<7.0.0)", "typer (>=0.4.1,<0.5.0)", "mkdocs-markdownextradata-plugin (>=0.1.7,<0.3.0)", "mdx-include (>=1.4.1,<2.0.0)", "mkdocs-material (>=8.1.4,<9.0.0)", "mkdocs (>=1.1.2,<2.0.0)"]
+dev = ["pre-commit (>=2.17.0,<3.0.0)", "uvicorn[standard] (>=0.12.0,<0.18.0)", "flake8 (>=3.8.3,<4.0.0)", "autoflake (>=1.4.0,<2.0.0)", "passlib[bcrypt] (>=1.7.2,<2.0.0)", "python-jose[cryptography] (>=3.3.0,<4.0.0)"]
+all = ["uvicorn[standard] (>=0.12.0,<0.18.0)", "email_validator (>=1.1.1,<2.0.0)", "orjson (>=3.2.1,<4.0.0)", "ujson (>=4.0.1,!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,<6.0.0)", "pyyaml (>=5.3.1,<7.0.0)", "itsdangerous (>=1.1.0,<3.0.0)", "python-multipart (>=0.0.5,<0.0.6)", "jinja2 (>=2.11.2,<4.0.0)", "requests (>=2.24.0,<3.0.0)"]
 
 [[package]]
 name = "flake8"
@@ -777,11 +777,14 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
 name = "pygments"
-version = "2.12.0"
+version = "2.13.0"
 description = "Pygments is a syntax highlighting package written in Python."
 category = "dev"
 optional = false
 python-versions = ">=3.6"
+
+[package.extras]
+plugins = ["importlib-metadata"]
 
 [[package]]
 name = "pyjwt"
@@ -912,7 +915,7 @@ idna2008 = ["idna"]
 
 [[package]]
 name = "sentry-sdk"
-version = "1.9.4"
+version = "1.9.5"
 description = "Python client for Sentry (https://sentry.io)"
 category = "main"
 optional = false
@@ -921,29 +924,29 @@ python-versions = "*"
 [package.dependencies]
 certifi = "*"
 urllib3 = [
-    {version = ">=1.26.11", markers = "python_version >= \"3.6\""},
     {version = ">=1.26.9", markers = "python_version >= \"3.5\""},
+    {version = ">=1.26.11", markers = "python_version >= \"3.6\""},
 ]
 
 [package.extras]
-tornado = ["tornado (>=5)"]
-starlette = ["starlette (>=0.19.1)"]
-sqlalchemy = ["sqlalchemy (>=1.2)"]
-sanic = ["sanic (>=0.8)"]
-rq = ["rq (>=0.6)"]
-quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]
-pyspark = ["pyspark (>=2.4.4)"]
-pure_eval = ["asttokens", "executing", "pure-eval"]
-httpx = ["httpx (>=0.16.0)"]
-flask = ["blinker (>=1.1)", "flask (>=0.11)"]
-fastapi = ["fastapi (>=0.79.0)"]
-falcon = ["falcon (>=1.4)"]
-django = ["django (>=1.8)"]
-chalice = ["chalice (>=1.16.0)"]
-celery = ["celery (>=3)"]
-bottle = ["bottle (>=0.12.13)"]
-beam = ["apache-beam (>=2.12)"]
 aiohttp = ["aiohttp (>=3.5)"]
+beam = ["apache-beam (>=2.12)"]
+bottle = ["bottle (>=0.12.13)"]
+celery = ["celery (>=3)"]
+chalice = ["chalice (>=1.16.0)"]
+django = ["django (>=1.8)"]
+falcon = ["falcon (>=1.4)"]
+fastapi = ["fastapi (>=0.79.0)"]
+flask = ["flask (>=0.11)", "blinker (>=1.1)"]
+httpx = ["httpx (>=0.16.0)"]
+pure_eval = ["pure-eval", "executing", "asttokens"]
+pyspark = ["pyspark (>=2.4.4)"]
+quart = ["quart (>=0.16.1)", "blinker (>=1.1)"]
+rq = ["rq (>=0.6)"]
+sanic = ["sanic (>=0.8)"]
+sqlalchemy = ["sqlalchemy (>=1.2)"]
+starlette = ["starlette (>=0.19.1)"]
+tornado = ["tornado (>=5)"]
 
 [[package]]
 name = "smmap"
@@ -1127,7 +1130,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "7371408d8896fab5f055c80172c38670c5ed4e9a0369f93921b8befb5b3f858a"
+content-hash = "d33d4fccfb0bdec18fb7aac42cf9c961270fb5998d76b2b896c74b6b05cb43e4"
 
 [metadata.files]
 aiohttp = [
@@ -1358,10 +1361,7 @@ cffi = [
     {file = "cffi-1.15.1-cp39-cp39-win_amd64.whl", hash = "sha256:70df4e3b545a17496c9b3f41f5115e69a4f2e77e94e1d2a8e1070bc0c38c8a3c"},
     {file = "cffi-1.15.1.tar.gz", hash = "sha256:d400bfb9a37b1351253cb402671cea7e89bdecc294e8016a707f6d1d8ac934f9"},
 ]
-charset-normalizer = [
-    {file = "charset-normalizer-2.1.0.tar.gz", hash = "sha256:575e708016ff3a5e3681541cb9d79312c416835686d054a23accb873b254f413"},
-    {file = "charset_normalizer-2.1.0-py3-none-any.whl", hash = "sha256:5189b6f22b01957427f35b6a08d9a0bc45b46d3788ef5a92e978433c7a35f8a5"},
-]
+charset-normalizer = []
 click = [
     {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
     {file = "click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},
@@ -1678,10 +1678,7 @@ pyflakes = [
     {file = "pyflakes-2.4.0-py2.py3-none-any.whl", hash = "sha256:3bb3a3f256f4b7968c9c788781e4ff07dce46bdf12339dcda61053375426ee2e"},
     {file = "pyflakes-2.4.0.tar.gz", hash = "sha256:05a85c2872edf37a4ed30b0cce2f6093e1d0581f8c19d7393122da7e25b2b24c"},
 ]
-pygments = [
-    {file = "Pygments-2.12.0-py3-none-any.whl", hash = "sha256:dc9c10fb40944260f6ed4c688ece0cd2048414940f1cea51b8b226318411c519"},
-    {file = "Pygments-2.12.0.tar.gz", hash = "sha256:5eb116118f9612ff1ee89ac96437bb6b49e8f04d8a13b514ba26f620208e26eb"},
-]
+pygments = []
 pyjwt = [
     {file = "PyJWT-2.4.0-py3-none-any.whl", hash = "sha256:72d1d253f32dbd4f5c88eaf1fdc62f3a19f676ccbadb9dbc5d07e951b2b26daf"},
     {file = "PyJWT-2.4.0.tar.gz", hash = "sha256:d42908208c699b3b973cbeb01a969ba6a96c821eefb1c5bfe4c390c01d67abba"},
