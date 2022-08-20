@@ -46,3 +46,29 @@ def get_example(arg: Type[BaseModel]) -> dict[str, Any]:
 def example(*args: Type[BaseModel], **kwargs: Any) -> Type[BaseConfig]:
     ex = dict(e for arg in args for e in get_example(arg).items())
     return cast(Type[BaseConfig], type("Config", (BaseConfig,), {"schema_extra": {"example": ex | kwargs}}))
+
+
+def add_endpoint_links_to_openapi_docs(openapi_schema: dict[str, Any]) -> None:
+    anchors: dict[str, str] = {
+        f"{method.upper()} {name}": f"docs#/{route['tags'][0]}/{route['operationId']}"
+        for name, path in openapi_schema["paths"].items()
+        for method, route in path.items()
+    }
+
+    def replace(text: str) -> str:
+        for endpoint, anchor in anchors.items():
+            text = text.replace(f"`{endpoint}`", f"[`{endpoint}`]({anchor})")
+        return text
+
+    def add_links(schema: Any) -> Any:
+        if isinstance(schema, dict):
+            for k, v in schema.items():
+                schema[k] = add_links(v)
+        elif isinstance(schema, list):
+            for i, v in enumerate(schema):
+                schema[i] = add_links(v)
+        elif isinstance(schema, str):
+            schema = replace(schema)
+        return schema
+
+    add_links(openapi_schema)

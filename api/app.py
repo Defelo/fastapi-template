@@ -1,4 +1,13 @@
-from typing import Awaitable, Callable, TypeVar
+"""
+## Authentication
+- To authenticate requests, the `Authorization` header must contain a valid API token.
+
+## Requirements
+Some endpoints require one or more of the following conditions to be met:
+- **AUTH**: The request is authenticated using a valid API token.
+"""
+
+from typing import Any, Awaitable, Callable, TypeVar
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -10,6 +19,7 @@ from .database import db, db_context
 from .endpoints import ROUTERS
 from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
+from .utils import add_endpoint_links_to_openapi_docs
 from .version import get_version
 
 
@@ -17,12 +27,18 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="FastAPI", version=get_version().description, root_path=ROOT_PATH)
-for router in ROUTERS:
+tags: list[Any] = []
+app = FastAPI(
+    title="FastAPI", description=__doc__, version=get_version().description, root_path=ROOT_PATH, openapi_tags=tags
+)
+for name, (router, description) in ROUTERS.items():
     app.include_router(router)
+    tags.append({"name": name, "description": description})
 
 
 def setup_app() -> None:
+    add_endpoint_links_to_openapi_docs(app.openapi())
+
     if SENTRY_DSN:
         logger.debug("initializing sentry")
         setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
@@ -57,6 +73,6 @@ async def on_shutdown() -> None:
     pass
 
 
-@app.head("/status", tags=["status"])
+@app.head("/status", include_in_schema=False)
 async def status() -> None:
     pass
