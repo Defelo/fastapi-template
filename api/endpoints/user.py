@@ -62,9 +62,8 @@ async def get_users(
     if mfa_enabled is not None:
         query = query.where(models.User.mfa_enabled == mfa_enabled)
 
-    total: int = await db.count(query)
     return {
-        "total": total,
+        "total": await db.count(query),
         "users": [
             user.serialize
             async for user in await db.stream(

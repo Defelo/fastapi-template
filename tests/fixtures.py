@@ -25,6 +25,8 @@ async def session(request: Any) -> AsyncIterator[MagicMock]:
     if marker := request.node.get_closest_marker("user_params"):
         for k, v in marker.kwargs.items():
             setattr(session.user, k, v)
+            if k == "id":
+                session.user_id = v
     yield session
 
 
@@ -38,3 +40,9 @@ async def client() -> AsyncIterator[AsyncClient]:
 async def user_client(client: AsyncClient, session: MagicMock, mocker: MockerFixture) -> AsyncIterator[AsyncClient]:
     mocker.patch("api.auth.UserAuth._get_session", AsyncMock(return_value=session))
     yield client
+
+
+@pytest.fixture
+async def admin_client(user_client: AsyncClient, session: MagicMock) -> AsyncIterator[AsyncClient]:
+    session.user.admin = True
+    yield user_client
