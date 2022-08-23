@@ -49,7 +49,7 @@ pre-commit = ["lint", "coverage"]
 [tool.poe.tasks.coverage]
 shell = """
 set -e
-coverage run --branch --source=api -m pytest -v tests
+coverage run -m pytest -v tests
 if [[ "$check" != True ]]; then fail="--fail-under=0"; fi
 if ! coverage report $fail; then c=2; fi
 if [[ "$xml" = True ]]; then coverage xml --fail-under=0; fi
@@ -113,6 +113,8 @@ asyncio_mode = "auto"
 markers = ["reload_modules"]
 
 [tool.coverage.run]
+branch = true
+source = ["api"]
 omit = ["api/__main__.py", "tests/*"]
 
 [tool.coverage.report]
