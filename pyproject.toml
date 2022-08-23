@@ -116,6 +116,7 @@ markers = ["reload_modules"]
 branch = true
 source = ["api"]
 omit = ["api/__main__.py", "tests/*"]
+concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 fail_under = 100
