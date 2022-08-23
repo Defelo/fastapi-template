@@ -55,7 +55,7 @@ hash-password = """python -c 'from api.utils import password_hasher; import sys,
 [tool.poe.tasks.coverage]
 shell = """
 set -e
-coverage run --branch --source=api -m pytest -v tests
+coverage run -m pytest -v tests
 if [[ "$check" != True ]]; then fail="--fail-under=0"; fi
 if ! coverage report $fail; then c=2; fi
 if [[ "$xml" = True ]]; then coverage xml --fail-under=0; fi
@@ -119,7 +119,10 @@ asyncio_mode = "auto"
 markers = ["user_params"]
 
 [tool.coverage.run]
+branch = true
+source = ["api"]
 omit = ["api/__main__.py", "tests/*"]
+concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 fail_under = 70
