@@ -420,3 +420,55 @@ async def test__disable_mfa(enabled: bool, user_client: AsyncClient, session: Ma
     assert (await user_client.delete("/users/admin/mfa")).status_code == 403
     session.user.admin = True
     assert (await user_client.delete("/users/admin/mfa")).status_code == 412
+
+
+@pytest.mark.parametrize(
+    "open_registration,open_oauth_registration,admin,is_self,is_admin,other_admins,expected_error",
+    [
+        (False, False, False, True, False, True, PermissionDeniedError),
+        (True, True, True, True, True, False, PermissionDeniedError),
+        (True, True, False, True, False, True, None),
+        (False, True, False, True, False, True, None),
+        (True, False, False, True, False, True, None),
+        (True, True, True, True, True, True, None),
+        (True, True, False, False, True, True, None),
+    ],
+)
+@db_wrapper
+async def test__delete(
+    open_registration: bool,
+    open_oauth_registration: bool,
+    admin: bool,
+    is_self: bool,
+    is_admin: bool,
+    other_admins: bool,
+    expected_error: Type[APIException] | None,
+    user_client: AsyncClient,
+    session: MagicMock,
+    mocker: MockerFixture,
+) -> None:
+    admin_user, user, *other_users = await _get_users()
+    user.admin = admin
+    user.logout = AsyncMock()  # type: ignore
+
+    if not other_admins:
+        admin_user.admin = False
+
+    mocker.patch("api.endpoints.user.OPEN_REGISTRATION", open_registration)
+    mocker.patch("api.endpoints.user.OPEN_OAUTH_REGISTRATION", open_oauth_registration)
+
+    session.user.admin = is_admin
+    if is_self:
+        session.user_id = session.user.id = user.id
+
+    response = await user_client.delete(f"/users/{user.id}")
+    user_ids = {u.id for u in await db.all(select(models.User))}
+
+    if expected_error is not None:
+        assert response.status_code == expected_error.status_code
+        assert response.text == expected_error.detail
+        assert user_ids == {u.id for u in other_users} | {admin_user.id, user.id}
+    else:
+        assert response.status_code == 200
+        assert response.json() is True
+        assert user_ids == {u.id for u in other_users} | {admin_user.id}
