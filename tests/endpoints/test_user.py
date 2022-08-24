@@ -10,8 +10,10 @@ from ..utils import mock_asynccontextmanager
 from api import models
 from api.database import db, db_wrapper, select
 from api.exceptions.api_exception import APIException
+from api.exceptions.auth import PermissionDeniedError
 from api.exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from api.exceptions.user import (
+    CannotDeleteLastLoginMethodError,
     NoLoginMethodError,
     OAuthRegistrationDisabledError,
     RecaptchaError,
@@ -236,3 +238,78 @@ async def test__create_user(
 
     if calls and expected_error is not InvalidOAuthTokenError:
         redis_delete.assert_called_once_with(*calls)
+
+
+@pytest.mark.parametrize(
+    "name,password,enabled,admin,is_self,is_enabled,is_admin,oauth,expected_error",
+    [
+        # change username
+        ("set", "unchanged", True, False, True, True, False, False, PermissionDeniedError),
+        ("conflict", "unchanged", True, False, True, True, True, False, UserAlreadyExistsError),
+        ("set", "unchanged", True, True, True, True, True, False, None),
+        # change password
+        ("unchanged", "clear", True, False, True, True, False, False, CannotDeleteLastLoginMethodError),
+        ("unchanged", "clear", True, False, True, True, False, True, None),
+        ("unchanged", "set", True, False, True, True, False, False, None),
+        ("unchanged", "set", True, False, True, True, False, True, None),
+        # change enabled
+        ("unchanged", "unchanged", False, False, True, True, False, False, PermissionDeniedError),
+        ("unchanged", "unchanged", False, False, False, True, True, False, None),
+        ("unchanged", "unchanged", True, False, False, False, True, False, None),
+        # change admin
+        ("unchanged", "unchanged", True, True, True, True, False, False, PermissionDeniedError),
+        ("unchanged", "unchanged", True, True, False, True, False, False, PermissionDeniedError),
+        ("unchanged", "unchanged", True, True, False, True, True, False, None),
+        # combined
+        ("set", "clear", False, False, False, True, True, True, None),
+        ("set", "set", True, True, False, True, True, False, None),
+        ("unchanged", "set", True, False, False, True, True, False, None),
+    ],
+)
+@db_wrapper
+async def test__update_user(
+    name: Literal["unchanged", "set", "conflict"],
+    password: Literal["unchanged", "set", "clear"],
+    enabled: bool,
+    admin: bool,
+    is_self: bool,
+    is_enabled: bool,
+    is_admin: bool,
+    oauth: bool,
+    expected_error: Type[APIException] | None,
+    user_client: AsyncClient,
+    session: MagicMock,
+) -> None:
+    user = (await _get_users())[1]
+    user.enabled = is_enabled
+    user.admin = is_admin
+    user.logout = AsyncMock()  # type: ignore
+    serialized = user.serialize
+
+    data: dict[str, Any] = {"enabled": enabled, "admin": admin}
+    serialized |= data
+
+    if name != "unchanged":
+        serialized["name"] = data["name"] = "test123" if name == "set" else "admin"
+    if password != "unchanged":
+        data["password"] = "Password1234" if password == "set" else ""
+        serialized["password"] = password == "set"
+
+    if is_self:
+        session.user.id = session.user_id = user.id
+    if is_admin:
+        session.user.admin = True
+
+    if oauth:
+        await models.OAuthUserConnection.create(user.id, "provider_id", "remote_user_id", "display_name")
+
+    response = await user_client.patch(f"/users/{user.id}", json=data)
+
+    if expected_error is not None:
+        assert response.status_code == expected_error.status_code
+        assert response.text == expected_error.detail
+    else:
+        assert response.status_code == 200
+        assert response.json() == serialized
+        if not enabled:
+            user.logout.assert_called_once_with()
