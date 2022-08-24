@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from typing import Any, Literal, Type
 from unittest.mock import AsyncMock, MagicMock
@@ -14,6 +15,10 @@ from api.exceptions.auth import PermissionDeniedError
 from api.exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from api.exceptions.user import (
     CannotDeleteLastLoginMethodError,
+    InvalidCodeError,
+    MFAAlreadyEnabledError,
+    MFANotEnabledError,
+    MFANotInitializedError,
     NoLoginMethodError,
     OAuthRegistrationDisabledError,
     RecaptchaError,
@@ -313,3 +318,105 @@ async def test__update_user(
         assert response.json() == serialized
         if not enabled:
             user.logout.assert_called_once_with()
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+@pytest.mark.user_params(id="foo")
+@db_wrapper
+async def test__initialize_mfa(enabled: bool, user_client: AsyncClient, session: MagicMock) -> None:
+    user = (await _get_users())[1]
+    if not enabled:
+        user.mfa_enabled = False
+        user.mfa_secret = None
+        user.mfa_recovery_code = None
+
+    response = await user_client.post(f"/users/{user.id}/mfa")
+
+    if enabled:
+        assert response.status_code == MFAAlreadyEnabledError.status_code
+        assert response.text == MFAAlreadyEnabledError.detail
+        return
+
+    assert response.status_code == 200
+    assert response.json() == user.mfa_secret
+    assert user.mfa_enabled is False
+    assert user.mfa_secret is not None and len(user.mfa_secret) >= 16
+    assert user.mfa_recovery_code is None
+
+    assert (await user_client.post("/users/admin/mfa")).status_code == 403
+    session.user.admin = True
+    assert (await user_client.post("/users/admin/mfa")).status_code == 200
+
+
+@pytest.mark.parametrize(
+    "state,code_valid,expected_error",
+    [
+        ("enabled", True, MFAAlreadyEnabledError),
+        ("disabled", True, MFANotInitializedError),
+        ("initialized", False, InvalidCodeError),
+        ("initialized", True, None),
+    ],
+)
+@pytest.mark.user_params(id="bar")
+@db_wrapper
+async def test__enable_mfa(
+    state: Literal["enabled", "initialized", "disabled"],
+    code_valid: bool,
+    expected_error: Type[APIException] | None,
+    user_client: AsyncClient,
+    mocker: MockerFixture,
+    session: MagicMock,
+) -> None:
+    user = (await _get_users())[2]
+
+    if state != "disabled":
+        user.mfa_secret = "secret"
+    if state == "enabled":
+        user.mfa_enabled = True
+        user.mfa_recovery_code = "recovery_code"
+
+    mocker.patch("api.endpoints.user.check_mfa_code", return_value=code_valid)
+
+    response = await user_client.put(f"/users/{user.id}/mfa", json={"code": "123456"})
+
+    if expected_error is not None:
+        assert response.status_code == expected_error.status_code
+        assert response.text == expected_error.detail
+    else:
+        assert response.status_code == 200
+        assert hashlib.sha256(response.json().encode()).hexdigest() == user.mfa_recovery_code
+        assert user.mfa_enabled is True
+        assert user.mfa_secret == "secret"
+        assert user.mfa_recovery_code is not None and len(user.mfa_recovery_code) >= 16
+
+        assert (await user_client.put("/users/admin/mfa", json={"code": "123456"})).status_code == 403
+        session.user.admin = True
+        assert (await user_client.put("/users/admin/mfa", json={"code": "123456"})).status_code == 412
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+@pytest.mark.user_params(id="foo")
+@db_wrapper
+async def test__disable_mfa(enabled: bool, user_client: AsyncClient, session: MagicMock) -> None:
+    user = (await _get_users())[1]
+    if not enabled:
+        user.mfa_enabled = False
+        user.mfa_secret = None
+        user.mfa_recovery_code = None
+
+    response = await user_client.delete(f"/users/{user.id}/mfa")
+
+    if not enabled:
+        assert response.status_code == MFANotEnabledError.status_code
+        assert response.text == MFANotEnabledError.detail
+        return
+
+    assert response.status_code == 200
+    assert response.json() is True
+    assert user.mfa_enabled is False
+    assert user.mfa_secret is None
+    assert user.mfa_recovery_code is None
+
+    assert (await user_client.delete("/users/admin/mfa")).status_code == 403
+    session.user.admin = True
+    assert (await user_client.delete("/users/admin/mfa")).status_code == 412
