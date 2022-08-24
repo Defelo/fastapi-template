@@ -12,7 +12,7 @@ packages = [{ include = "api" }]
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.80.0"
-uvicorn = "^0.18.2"
+uvicorn = "^0.18.3"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.40"
