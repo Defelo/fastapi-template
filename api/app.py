@@ -29,7 +29,13 @@ logger = get_logger(__name__)
 
 tags: list[Any] = []
 app = FastAPI(
-    title="FastAPI", description=__doc__, version=get_version().description, root_path=ROOT_PATH, openapi_tags=tags
+    title="FastAPI",
+    description=__doc__,
+    version=get_version().description,
+    root_path=ROOT_PATH,
+    root_path_in_servers=False,
+    servers=[{"url": ROOT_PATH}] if ROOT_PATH else None,
+    openapi_tags=tags,
 )
 for name, (router, description) in ROUTERS.items():
     app.include_router(router)
