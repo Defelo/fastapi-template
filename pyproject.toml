@@ -120,7 +120,7 @@ concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 fail_under = 100
-exclude_lines = ["if TYPE_CHECKING:"]
+exclude_lines = ["if TYPE_CHECKING:", "if DEBUG:"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
