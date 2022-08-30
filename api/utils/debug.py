@@ -6,6 +6,7 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 from pydantic import BaseModel
+from starlette.concurrency import iterate_in_threadpool
 
 from api.logger import get_logger
 
@@ -39,13 +40,12 @@ async def check_responses(
     if response.headers.get("Content-type") != "application/json":
         return response
 
-    body = b""
-    async for chunk in response.body_iterator:
-        body += chunk
+    chunks = [chunk async for chunk in response.body_iterator]
+    body = b"".join(chunks)
+
+    response.body_iterator = iterate_in_threadpool(iter(chunks))
 
     if route := request.scope.get("route"):
         _check_response_schema(request.method, route, response.status_code, body)
 
-    return StreamingResponse(
-        content=body, status_code=response.status_code, headers=dict(response.headers), media_type=response.media_type
-    )
+    return response

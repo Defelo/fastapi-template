@@ -51,32 +51,22 @@ async def test__check_responses(json: bool, has_route: bool, mocker: MockerFixtu
     response = MagicMock(headers={"Content-type": "application/json" if json else MagicMock()})
     call_next = AsyncMock(return_value=response)
     check_response_schema = mocker.patch("api.utils.debug._check_response_schema")
-    streaming_response = mocker.patch("api.utils.debug.StreamingResponse")
 
     async def body_iterator() -> AsyncIterator[bytes]:
         yield b"foo"
         yield b"bar"
         yield b"12345"
+        yield b""
 
     response.body_iterator = body_iterator()
 
     result = await check_responses(request, call_next)
 
+    assert result is response
+    assert [chunk async for chunk in result.body_iterator] == [b"foo", b"bar", b"12345", b""]
+
     call_next.assert_called_once_with(request)
-    if not json:
-        assert result is response
-        check_response_schema.assert_not_called()
-        return
-
-    streaming_response.assert_called_once_with(
-        content=b"foobar12345",
-        status_code=response.status_code,
-        headers=response.headers,
-        media_type=response.media_type,
-    )
-    assert result == streaming_response()
-
-    if has_route:
+    if json and has_route:
         check_response_schema.assert_called_once_with(request.method, route, response.status_code, b"foobar12345")
     else:
         check_response_schema.assert_not_called()
