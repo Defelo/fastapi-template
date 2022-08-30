@@ -185,6 +185,17 @@ class DB:
             await close_event.wait()
 
 
+def get_url() -> URL:
+    return URL.create(
+        drivername=DB_DRIVER,
+        username=DB_USERNAME,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_DATABASE,
+    )
+
+
 def get_database() -> DB:
     """
     Create a database connection object using the environment variables
@@ -193,14 +204,7 @@ def get_database() -> DB:
     """
 
     return DB(
-        url=URL.create(
-            drivername=DB_DRIVER,
-            username=DB_USERNAME,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_DATABASE,
-        ),
+        url=get_url(),
         pool_pre_ping=True,
         pool_recycle=POOL_RECYCLE,
         pool_size=POOL_SIZE,
