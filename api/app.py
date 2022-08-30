@@ -102,7 +102,6 @@ async def clean_expired_sessions_loop() -> None:
 async def on_startup() -> None:
     setup_app()
 
-    await db.create_tables()
     asyncio.create_task(clean_expired_sessions_loop())
 
     async with db_context():
