@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from ..utils import example, get_example
+from ..utils.docs import example, get_example
 
 
 USERNAME_REGEX = r"^[a-zA-Z0-9]{4,32}$"

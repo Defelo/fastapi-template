@@ -1,7 +1,7 @@
 from _pytest.capture import CaptureFixture
 from pytest_mock import MockerFixture
 
-from .utils import run_module
+from ._utils import run_module
 from api import version
 
 

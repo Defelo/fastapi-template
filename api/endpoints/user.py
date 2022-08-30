@@ -29,7 +29,8 @@ from ..exceptions.user import (
 from ..redis import redis
 from ..schemas.session import LoginResponse
 from ..schemas.user import MFA_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
-from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled
+from ..utils.mfa import check_mfa_code
+from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
 
 router = APIRouter(tags=["users"])

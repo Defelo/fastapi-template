@@ -1,7 +1,7 @@
 from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 
-from .utils import reload_module
+from ._utils import reload_module
 from api import environment, main
 
 

@@ -119,5 +119,7 @@ poe pre-commit      # run pre-commit checks
     poe mypy        # check typing
     poe flake8      # check code style
   poe coverage      # run unit tests with coverage
+poe alembic         # use alembic to manage database migrations
+poe migrate         # run database migrations
 poe hash-password   # hash a given password using argon2
 ```

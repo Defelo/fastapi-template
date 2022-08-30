@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from ..auth import user_auth
 from ..exceptions.auth import user_responses
 from ..schemas.test import TestResponse
-from ..utils import responses
+from ..utils.docs import responses
 
 
 router = APIRouter(tags=["test"])

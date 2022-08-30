@@ -7,7 +7,7 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from ..utils import mock_asynccontextmanager
+from .._utils import mock_asynccontextmanager
 from api import models
 from api.database import db, db_wrapper, select
 from api.exceptions.api_exception import APIException
@@ -26,7 +26,8 @@ from api.exceptions.user import (
     UserAlreadyExistsError,
 )
 from api.models.session import _hash_token
-from api.utils import decode_jwt, verify_password
+from api.utils.jwt import decode_jwt
+from api.utils.passwords import verify_password
 
 
 async def _get_users() -> list[models.User]:

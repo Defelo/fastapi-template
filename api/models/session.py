@@ -14,7 +14,7 @@ from ..database import Base, db, db_wrapper, delete
 from ..environment import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import decode_jwt, encode_jwt
+from ..utils.jwt import decode_jwt, encode_jwt
 
 
 logger = get_logger(__name__)

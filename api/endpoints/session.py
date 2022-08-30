@@ -24,7 +24,9 @@ from ..models.session import SessionExpiredError
 from ..redis import redis
 from ..schemas.oauth import OAuthLogin
 from ..schemas.session import Login, LoginResponse, OAuthLoginResponse, Session
-from ..utils import check_mfa_code, check_recaptcha, recaptcha_enabled, responses
+from ..utils.docs import responses
+from ..utils.mfa import check_mfa_code
+from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
 
 router = APIRouter(tags=["sessions"])

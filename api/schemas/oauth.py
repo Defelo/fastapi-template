@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from ..utils import example
+from ..utils.docs import example
 
 
 class OAuthProvider(BaseModel):

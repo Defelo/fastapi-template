@@ -1,7 +1,7 @@
 from _pytest.monkeypatch import MonkeyPatch
 from aioredis import Redis
 
-from .utils import import_module, reload_module
+from ._utils import import_module, reload_module
 from api import environment, redis
 
 

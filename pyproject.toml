@@ -11,8 +11,8 @@ packages = [{ include = "api" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-fastapi = "^0.79.1"
-uvicorn = "^0.18.2"
+fastapi = "^0.81.0"
+uvicorn = "^0.18.3"
 aiohttp = "^3.8.1"
 aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.40"
@@ -24,6 +24,7 @@ httpx = "^0.23.0"
 argon2-cffi = "^21.3.0"
 PyJWT = "^2.3.0"
 starlette = "^0.19.1"
+alembic = "^1.8.1"
 pyotp = "^2.6.0"
 jq = "^1.2.2"
 
@@ -50,6 +51,8 @@ mypy = "mypy ."
 lint = ["format", "mypy", "flake8"]
 test = "pytest -v tests"
 pre-commit = ["lint", "coverage"]
+alembic = { cmd = "alembic", envfile = ".env" }
+migrate = { cmd = "alembic upgrade head", envfile = ".env" }
 hash-password = """python -c 'from api.utils import password_hasher; import sys, getpass; print(password_hasher.hash(sys.argv[1] if len(sys.argv) > 1 else getpass.getpass()))'"""
 
 [tool.poe.tasks.coverage]
@@ -113,6 +116,7 @@ sections = ["FUTURE", "STDLIB", "FIRSTPARTY", "THIRDPARTY", "LOCALFOLDER"]
 strict = true
 ignore_missing_imports = true
 plugins = ["sqlalchemy.ext.mypy.plugin"]
+exclude = ['^alembic/env\.py$']
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -126,7 +130,7 @@ concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 fail_under = 70
-exclude_lines = ["if TYPE_CHECKING:"]
+exclude_lines = ["if TYPE_CHECKING:", "if DEBUG:"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

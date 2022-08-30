@@ -6,7 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import DeclarativeMeta, registry
 
-from .utils import import_module, mock_asynccontextmanager, mock_dict, mock_list
+from ._utils import import_module, mock_asynccontextmanager, mock_dict, mock_list
 from api import database
 
 
@@ -359,22 +359,17 @@ async def test__wait_for_close_event() -> None:
     close_event.wait.assert_called_once_with()
 
 
-async def test__get_database(mocker: MockerFixture) -> None:
+async def test__get_url(mocker: MockerFixture) -> None:
     url_create_patch = mocker.patch("api.database.database.URL.create")
 
-    db_patch = mocker.patch("api.database.database.DB")
     db_driver_patch = mocker.patch("api.database.database.DB_DRIVER")
     db_host_patch = mocker.patch("api.database.database.DB_HOST")
     db_port_patch = mocker.patch("api.database.database.DB_PORT")
     db_database_patch = mocker.patch("api.database.database.DB_DATABASE")
     db_username_patch = mocker.patch("api.database.database.DB_USERNAME")
     db_password_patch = mocker.patch("api.database.database.DB_PASSWORD")
-    pool_recycle_patch = mocker.patch("api.database.database.POOL_RECYCLE")
-    pool_size_patch = mocker.patch("api.database.database.POOL_SIZE")
-    max_overflow_patch = mocker.patch("api.database.database.MAX_OVERFLOW")
-    sql_show_statements_patch = mocker.patch("api.database.database.SQL_SHOW_STATEMENTS")
 
-    result = database.database.get_database()
+    result = database.database.get_url()
 
     url_create_patch.assert_called_once_with(
         drivername=db_driver_patch,
@@ -384,9 +379,22 @@ async def test__get_database(mocker: MockerFixture) -> None:
         port=db_port_patch,
         database=db_database_patch,
     )
+    assert result == url_create_patch()
 
+
+async def test__get_database(mocker: MockerFixture) -> None:
+    db_patch = mocker.patch("api.database.database.DB")
+    get_url_patch = mocker.patch("api.database.database.get_url")
+    pool_recycle_patch = mocker.patch("api.database.database.POOL_RECYCLE")
+    pool_size_patch = mocker.patch("api.database.database.POOL_SIZE")
+    max_overflow_patch = mocker.patch("api.database.database.MAX_OVERFLOW")
+    sql_show_statements_patch = mocker.patch("api.database.database.SQL_SHOW_STATEMENTS")
+
+    result = database.database.get_database()
+
+    get_url_patch.assert_called_once_with()
     db_patch.assert_called_once_with(
-        url=url_create_patch(),
+        url=get_url_patch(),
         pool_pre_ping=True,
         pool_recycle=pool_recycle_patch,
         pool_size=pool_size_patch,

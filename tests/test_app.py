@@ -6,7 +6,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from .utils import import_module, mock_asynccontextmanager
+from ._utils import import_module, mock_asynccontextmanager
 from api import app
 
 

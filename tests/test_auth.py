@@ -5,7 +5,7 @@ import pytest
 from fastapi.security.base import SecurityBase
 from pytest_mock import MockerFixture
 
-from .utils import mock_list
+from ._utils import mock_list
 from api import auth
 from api.auth import PermissionLevel
 from api.exceptions.auth import InvalidTokenError, PermissionDeniedError

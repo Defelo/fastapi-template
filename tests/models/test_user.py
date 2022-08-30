@@ -7,7 +7,7 @@ from sqlalchemy import func
 
 from api.database import db, db_wrapper, select
 from api.models import User
-from api.utils import verify_password
+from api.utils.passwords import verify_password
 
 
 @pytest.mark.parametrize(

@@ -1,11 +1,10 @@
 import os
 import re
 
-import jq
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from .utils import import_module
+from ._utils import import_module
 from api.environment import OAuthProvider
 
 

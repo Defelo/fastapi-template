@@ -2,7 +2,7 @@ import jwt
 from pydantic import BaseModel, Field
 
 from .user import User
-from ..utils import example, get_example
+from ..utils.docs import example, get_example
 
 
 class Session(BaseModel):

@@ -35,6 +35,8 @@ USER api
 EXPOSE 8000
 
 COPY --from=builder /build/.venv/lib /usr/local/lib
+COPY alembic /app/alembic
+COPY alembic.ini /app/
 COPY --from=builder /build/VERSION /app/
 
 COPY api /app/api/
@@ -42,4 +44,4 @@ COPY api /app/api/
 HEALTHCHECK --interval=20s --timeout=5s --retries=1 \
     CMD curl -fI http://localhost:${PORT:-8000}/status
 
-CMD ["python", "-m", "api"]
+CMD python -m alembic upgrade head && python -m api

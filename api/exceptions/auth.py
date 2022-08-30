@@ -3,7 +3,7 @@ from typing import Any, Type
 from fastapi import status
 
 from .api_exception import APIException
-from ..utils import responses
+from ..utils.docs import responses
 
 
 class InvalidTokenError(APIException):

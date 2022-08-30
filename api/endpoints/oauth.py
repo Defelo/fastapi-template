@@ -19,7 +19,7 @@ from ..exceptions.oauth import (
 )
 from ..exceptions.user import CannotDeleteLastLoginMethodError, UserNotFoundError
 from ..schemas.oauth import OAuthConnection, OAuthLogin, OAuthProvider
-from ..utils import responses
+from ..utils.docs import responses
 
 
 router = APIRouter(tags=["oauth"])

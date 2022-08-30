@@ -12,7 +12,8 @@ from ..database import Base, db, select
 from ..environment import ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
-from ..utils import decode_jwt, hash_password, verify_password
+from ..utils.jwt import decode_jwt
+from ..utils.passwords import hash_password, verify_password
 
 
 if TYPE_CHECKING:
