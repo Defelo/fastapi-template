@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 from uvicorn.config import LOGGING_CONFIG
 from uvicorn.logging import DefaultFormatter
 
-from .utils import mock_list
+from ._utils import mock_list
 from api import logger
 
 

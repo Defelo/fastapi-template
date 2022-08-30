@@ -5,7 +5,7 @@ import pytest
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from .utils import import_module
+from ._utils import import_module
 from api.app import app
 
 

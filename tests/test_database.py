@@ -6,7 +6,7 @@ import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy.orm import DeclarativeMeta, registry
 
-from .utils import import_module, mock_asynccontextmanager, mock_dict, mock_list
+from ._utils import import_module, mock_asynccontextmanager, mock_dict, mock_list
 from api import database
 
 

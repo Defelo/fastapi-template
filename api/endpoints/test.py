@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from ..auth import auth
 from ..exceptions.auth import InvalidTokenError
 from ..schemas.test import TestResponse
-from ..utils import responses
+from ..utils.docs import responses
 
 
 router = APIRouter(tags=["test"])

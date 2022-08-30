@@ -4,23 +4,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 
-from .utils import mock_dict, mock_list
-from api import utils
-
-
-async def test__run_in_thread() -> None:
-    out = []
-    res = MagicMock()
-    args = tuple(mock_list(5))
-    kwargs = mock_dict(5, True)
-
-    @utils.run_in_thread
-    def func(*_args: MagicMock, **_kwargs: MagicMock) -> MagicMock:
-        out.append((_args, _kwargs))
-        return res
-
-    assert await func(*args, **kwargs) == res
-    assert out == [(args, kwargs)]
+from .._utils import mock_dict
+from api.utils import docs
 
 
 async def test__responses() -> None:
@@ -34,7 +19,7 @@ async def test__responses() -> None:
 
     args = [a := make_exception(401), b := make_exception(403), c := make_exception(403), d := make_exception(404)]
 
-    result = utils.responses(default, *args)
+    result = docs.responses(default, *args)
 
     assert result == {
         200: {"model": default},
@@ -72,11 +57,11 @@ async def test__get_example() -> None:
     arg = MagicMock()
     arg.Config.schema_extra = {"example": (expected := MagicMock())}
 
-    assert utils.get_example(arg) == expected
+    assert docs.get_example(arg) == expected
 
 
 async def test__example(mocker: MockerFixture) -> None:
-    get_example_patch = mocker.patch("api.utils.get_example")
+    get_example_patch = mocker.patch("api.utils.docs.get_example")
 
     args = [a := MagicMock(), b := MagicMock()]
     get_example_patch.side_effect = lambda x: MagicMock(
@@ -84,7 +69,7 @@ async def test__example(mocker: MockerFixture) -> None:
     )
     kwargs = mock_dict(5, True)
 
-    result = utils.example(*args, **kwargs)
+    result = docs.example(*args, **kwargs)
 
     assert result.schema_extra == {
         "example": {
@@ -106,7 +91,7 @@ async def test__add_endpoint_links_to_openapi_docs() -> None:
     class Model(BaseModel):
         test: str = Field(description="xyz `POST /foobar`")
 
-    @app.get("/test", tags=["test"], responses=utils.responses(Model))
+    @app.get("/test", tags=["test"], responses=docs.responses(Model))
     async def test() -> None:
         """Test endpoint. `POST /foobar`"""
         pass
@@ -116,7 +101,7 @@ async def test__add_endpoint_links_to_openapi_docs() -> None:
         """Foobar endpoint. `GET /test`"""
         pass
 
-    utils.add_endpoint_links_to_openapi_docs(app.openapi())
+    docs.add_endpoint_links_to_openapi_docs(app.openapi())
     schema = app.openapi()
     assert (
         schema["info"]["description"]

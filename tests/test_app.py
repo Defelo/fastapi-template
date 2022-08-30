@@ -9,7 +9,7 @@ from httpx import AsyncClient
 from pydantic import create_model
 from pytest_mock import MockerFixture
 
-from .utils import import_module, mock_asynccontextmanager
+from ._utils import import_module, mock_asynccontextmanager
 from api import app
 from api.app import _check_response_schema, check_responses
 

@@ -6,6 +6,7 @@
 Some endpoints require one or more of the following conditions to be met:
 - **AUTH**: The request is authenticated using a valid API token.
 """
+
 import json
 from typing import Any, Awaitable, Callable, Type, TypeVar
 
@@ -22,7 +23,7 @@ from .database import db, db_context
 from .endpoints import ROUTERS
 from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
-from .utils import add_endpoint_links_to_openapi_docs
+from .utils.docs import add_endpoint_links_to_openapi_docs
 from .version import get_version
 
 
