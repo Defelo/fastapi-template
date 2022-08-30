@@ -96,7 +96,7 @@ async def test__on_startup(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> N
     await on_startup()
 
     module.setup_app.assert_called_once_with()
-    db_patch.create_tables.assert_called_once_with()
+    db_patch.create_tables.assert_not_called()  # use alembic migrations instead
 
 
 async def test__on_shutdown(mocker: MockerFixture) -> None:

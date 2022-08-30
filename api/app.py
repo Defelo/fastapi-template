@@ -75,8 +75,6 @@ async def rollback_on_exception(request: Request, exc: HTTPException) -> JSONRes
 async def on_startup() -> None:
     setup_app()
 
-    await db.create_tables()
-
 
 @app.on_event("shutdown")
 async def on_shutdown() -> None:
