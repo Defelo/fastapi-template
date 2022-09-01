@@ -50,6 +50,7 @@ test = "pytest -v tests"
 pre-commit = ["lint", "coverage"]
 alembic = { cmd = "alembic", envfile = ".env" }
 migrate = { cmd = "alembic upgrade head", envfile = ".env" }
+sign = { cmd = """python -c 'from api.utils import jwt; import sys, json; print(jwt.encode_jwt(json.loads(sys.argv[1]), jwt.timedelta(seconds=int(sys.argv[2]))))'""", envfile = ".env" }
 
 [tool.poe.tasks.coverage]
 shell = """

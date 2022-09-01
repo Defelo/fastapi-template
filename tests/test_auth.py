@@ -66,3 +66,28 @@ async def test__statictokenauth_call__valid_token(mocker: MockerFixture) -> None
 
     get_token.assert_called_once_with(request)
     http_auth._check_token.assert_called_once_with(get_token())
+
+
+async def test__jwtauth_call__invalid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    mocker.patch("api.auth.decode_jwt", MagicMock(return_value=None))
+
+    request = MagicMock()
+    http_auth = MagicMock()
+
+    with pytest.raises(InvalidTokenError):
+        await auth.JWTAuth.__call__(http_auth, request)
+
+    get_token.assert_called_once_with(request)
+
+
+async def test__jwtauth_call__valid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    mocker.patch("api.auth.decode_jwt", MagicMock(return_value={"foo": "bar"}))
+
+    request = MagicMock()
+    http_auth = MagicMock()
+
+    assert await auth.JWTAuth.__call__(http_auth, request) == {"foo": "bar"}
+
+    get_token.assert_called_once_with(request)
