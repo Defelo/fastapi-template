@@ -4,7 +4,6 @@ import sys
 import sentry_sdk
 from fastapi import FastAPI
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from sentry_sdk.integrations.logging import LoggingIntegration, ignore_logger
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from uvicorn.config import LOGGING_CONFIG
@@ -28,7 +27,6 @@ def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
         release=f"{name}@{version}",
     )
     ignore_logger("uvicorn.error")
-    app.add_middleware(SentryAsgiMiddleware)
 
 
 logging_formatter = DefaultFormatter(fmt := "[%(asctime)s] %(levelprefix)s %(message)s")

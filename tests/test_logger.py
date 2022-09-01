@@ -11,7 +11,6 @@ from api import logger
 
 
 async def test__setup_sentry(mocker: MockerFixture) -> None:
-    sentryasgimiddleware_patch = mocker.patch("api.logger.SentryAsgiMiddleware")
     ignore_logger_patch = mocker.patch("api.logger.ignore_logger")
     loggingintegration_patch = mocker.patch("api.logger.LoggingIntegration")
     sqlalchemyintegration_patch = mocker.patch("api.logger.SqlalchemyIntegration")
@@ -34,7 +33,6 @@ async def test__setup_sentry(mocker: MockerFixture) -> None:
         release=f"{name}@{version}",
     )
     ignore_logger_patch.assert_called_once_with("uvicorn.error")
-    app.add_middleware.assert_called_once_with(sentryasgimiddleware_patch)
 
 
 async def test__logging_formatter() -> None:
