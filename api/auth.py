@@ -11,10 +11,19 @@ def get_token(request: Request) -> str:
 
 
 class HTTPAuth(SecurityBase):
-    def __init__(self, token: str):
-        self._token = token
+    def __init__(self) -> None:
         self.model = HTTPBearer()
         self.scheme_name = self.__class__.__name__
+
+    async def __call__(self, request: Request) -> bool:
+        raise NotImplementedError
+
+
+class StaticTokenAuth(HTTPAuth):
+    def __init__(self, token: str) -> None:
+        super().__init__()
+
+        self._token = token
 
     async def _check_token(self, token: str) -> bool:
         return token == self._token
@@ -22,8 +31,7 @@ class HTTPAuth(SecurityBase):
     async def __call__(self, request: Request) -> bool:
         if not await self._check_token(get_token(request)):
             raise InvalidTokenError
-
         return True
 
 
-auth = Depends(HTTPAuth("secret token"))
+auth = Depends(StaticTokenAuth("secret token"))
