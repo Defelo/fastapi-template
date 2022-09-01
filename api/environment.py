@@ -1,3 +1,4 @@
+import secrets
 from os import getenv
 
 
@@ -15,6 +16,8 @@ ROOT_PATH: str = getenv("ROOT_PATH", "")
 
 DEBUG: bool = get_bool("DEBUG", False)
 RELOAD: bool = get_bool("RELOAD", False)
+
+JWT_SECRET = getenv("JWT_SECRET", secrets.token_urlsafe(64))
 
 # database configuration
 DB_DRIVER: str = getenv("DB_DRIVER", "mysql+aiomysql")
