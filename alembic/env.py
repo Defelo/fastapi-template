@@ -10,6 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from api.database.database import Base, get_url
 
 
+NAME = None
+
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -26,6 +29,8 @@ config.set_main_option("sqlalchemy.url", str(get_url()))
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
+version_table = f"{NAME}_alembic_version" if NAME else "alembic_version"
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -47,7 +52,11 @@ def run_migrations_offline() -> None:
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url, target_metadata=target_metadata, literal_binds=True, dialect_opts={"paramstyle": "named"}
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        version_table=version_table,
     )
 
     with context.begin_transaction():
@@ -55,7 +64,7 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, version_table=version_table)
 
     with context.begin_transaction():
         context.run_migrations()
