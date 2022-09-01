@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Awaitable, Callable, cast
+from typing import Any, Awaitable, Callable
 
 from fastapi import Depends, Request
 from fastapi.openapi.models import HTTPBearer
@@ -10,6 +10,7 @@ from .database import db
 from .exceptions.auth import InvalidTokenError, PermissionDeniedError
 from .exceptions.user import UserNotFoundError
 from .models import Session, User
+from .utils.jwt import decode_jwt
 
 
 def get_token(request: Request) -> str:
@@ -28,14 +29,30 @@ class HTTPAuth(SecurityBase):
         self.model = HTTPBearer()
         self.scheme_name = self.__class__.__name__
 
-    async def _get_session(self, token: str) -> Session | None:
+    async def __call__(self, request: Request) -> Any:
         raise NotImplementedError
 
-    async def __call__(self, request: Request) -> Session | None:
-        if not (session := await self._get_session(get_token(request))):
-            raise InvalidTokenError
 
-        return session
+class StaticTokenAuth(HTTPAuth):
+    def __init__(self, token: str) -> None:
+        super().__init__()
+
+        self._token = token
+
+    async def _check_token(self, token: str) -> bool:
+        return token == self._token
+
+    async def __call__(self, request: Request) -> bool:
+        if not await self._check_token(get_token(request)):
+            raise InvalidTokenError
+        return True
+
+
+class JWTAuth(HTTPAuth):
+    async def __call__(self, request: Request) -> dict[Any, Any]:
+        if (data := decode_jwt(get_token(request))) is None:
+            raise InvalidTokenError
+        return data
 
 
 class UserAuth(HTTPAuth):
@@ -44,23 +61,23 @@ class UserAuth(HTTPAuth):
 
         self.min_level: PermissionLevel = min_level
 
-    async def _get_session(self, token: str) -> Session | None:
-        return await Session.from_access_token(token)
-
     async def __call__(self, request: Request) -> Session | None:
-        if self.min_level == PermissionLevel.PUBLIC:
-            try:
-                return await super().__call__(request)
-            except InvalidTokenError:
-                return None
+        session: Session | None = await Session.from_access_token(get_token(request))
 
-        session: Session = cast(Session, await super().__call__(request))
+        if self.min_level == PermissionLevel.PUBLIC:
+            return session
+
+        if not session:
+            raise InvalidTokenError
 
         if self.min_level == PermissionLevel.ADMIN and not session.user.admin:
             raise PermissionDeniedError
 
         return session
 
+
+static_token_auth = Depends(StaticTokenAuth("secret token"))
+jwt_auth = Depends(JWTAuth())
 
 public_auth = Depends(UserAuth(PermissionLevel.PUBLIC))
 user_auth = Depends(UserAuth(PermissionLevel.USER))

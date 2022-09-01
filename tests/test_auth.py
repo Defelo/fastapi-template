@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Type
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -32,39 +32,70 @@ async def test__httpauth_constructor(mocker: MockerFixture) -> None:
     assert issubclass(auth.HTTPAuth, SecurityBase)
 
 
-async def test__httpauth_get_session() -> None:
-    http_auth = auth.HTTPAuth()
-
-    with pytest.raises(NotImplementedError):
-        await http_auth._get_session("test")
-
-
-async def test__httpauth_call__invalid_token(mocker: MockerFixture) -> None:
-    get_token = mocker.patch("api.auth.get_token")
-
+async def test__httpauth_call() -> None:
     request = MagicMock()
     http_auth = MagicMock()
-    http_auth._get_session = AsyncMock(return_value=None)
-
-    with pytest.raises(InvalidTokenError):
+    with pytest.raises(NotImplementedError):
         await auth.HTTPAuth.__call__(http_auth, request)
 
-    get_token.assert_called_once_with(request)
-    http_auth._get_session.assert_called_once_with(get_token())
+
+@pytest.mark.parametrize("token,ok", [("S3cr3t Token!", True), ("asdf1234", False)])
+async def test__statictokenauth_check_token(token: str, ok: bool) -> None:
+    http_auth = MagicMock()
+    http_auth._token = "S3cr3t Token!"
+    assert await auth.StaticTokenAuth._check_token(http_auth, token) == ok
 
 
-async def test__httpauth_call__valid_token(mocker: MockerFixture) -> None:
+async def test__statictokenauth_call__invalid_token(mocker: MockerFixture) -> None:
     get_token = mocker.patch("api.auth.get_token")
 
     request = MagicMock()
     http_auth = MagicMock()
-    http_auth._get_session = AsyncMock(return_value=MagicMock())
+    http_auth._check_token = AsyncMock(return_value=False)
 
-    result = await auth.HTTPAuth.__call__(http_auth, request)
+    with pytest.raises(InvalidTokenError):
+        await auth.StaticTokenAuth.__call__(http_auth, request)
 
     get_token.assert_called_once_with(request)
-    http_auth._get_session.assert_called_once_with(get_token())
-    assert result == http_auth._get_session.return_value
+    http_auth._check_token.assert_called_once_with(get_token())
+
+
+async def test__statictokenauth_call__valid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+
+    request = MagicMock()
+    http_auth = MagicMock()
+    http_auth._check_token = AsyncMock(return_value=True)
+
+    assert await auth.StaticTokenAuth.__call__(http_auth, request) is True
+
+    get_token.assert_called_once_with(request)
+    http_auth._check_token.assert_called_once_with(get_token())
+
+
+async def test__jwtauth_call__invalid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    mocker.patch("api.auth.decode_jwt", MagicMock(return_value=None))
+
+    request = MagicMock()
+    http_auth = MagicMock()
+
+    with pytest.raises(InvalidTokenError):
+        await auth.JWTAuth.__call__(http_auth, request)
+
+    get_token.assert_called_once_with(request)
+
+
+async def test__jwtauth_call__valid_token(mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    mocker.patch("api.auth.decode_jwt", MagicMock(return_value={"foo": "bar"}))
+
+    request = MagicMock()
+    http_auth = MagicMock()
+
+    assert await auth.JWTAuth.__call__(http_auth, request) == {"foo": "bar"}
+
+    get_token.assert_called_once_with(request)
 
 
 async def test__userauth_constructor() -> None:
@@ -76,31 +107,17 @@ async def test__userauth_constructor() -> None:
     assert issubclass(auth.UserAuth, auth.HTTPAuth)
 
 
-async def test__userauth_get_session(mocker: MockerFixture) -> None:
-    from_access_token = mocker.patch("api.auth.Session.from_access_token", AsyncMock())
-
-    result = await auth.UserAuth._get_session(MagicMock(), "my access token")
-
-    from_access_token.assert_called_once_with("my access token")
-    assert result == await from_access_token()
-
-
 @pytest.mark.parametrize("valid", [True, False])
 async def test__userauth_call__public(valid: bool, mocker: MockerFixture) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    from_access_token = mocker.patch("api.auth.Session.from_access_token", AsyncMock())
     request = MagicMock()
-    session = MagicMock()
-
-    async def super_call(_: Any, r: Any) -> Any:
-        assert r == request
-        if valid:
-            return session
-        raise InvalidTokenError
-
-    mocker.patch("api.auth.HTTPAuth.__call__", super_call)
 
     result = await auth.UserAuth(PermissionLevel.PUBLIC)(request)
 
-    assert result == (session if valid else None)
+    get_token.assert_called_once_with(request)
+    from_access_token.assert_called_once_with(get_token())
+    assert result == await from_access_token()
 
 
 @pytest.mark.parametrize(
@@ -117,26 +134,25 @@ async def test__userauth_call__public(valid: bool, mocker: MockerFixture) -> Non
 async def test__userauth_call(
     permission_level: PermissionLevel, valid: bool, admin: bool, exc: Type[Exception] | None, mocker: MockerFixture
 ) -> None:
+    get_token = mocker.patch("api.auth.get_token")
+    from_access_token = mocker.patch("api.auth.Session.from_access_token")
+
     request = MagicMock()
     session = MagicMock()
     session.user.admin = admin
 
-    async def super_call(_: Any, r: Any) -> Any:
-        assert r == request
-        if valid:
-            return session
-        raise InvalidTokenError
-
-    mocker.patch("api.auth.HTTPAuth.__call__", super_call)
+    from_access_token.return_value = session if valid else None
 
     user_auth = auth.UserAuth(permission_level)
 
     if exc is None:
-        result = await user_auth(request)
-        assert result == session
+        assert await user_auth(request) == session
     else:
         with pytest.raises(exc):
             await user_auth(request)
+
+    get_token.assert_called_once_with(request)
+    from_access_token.assert_called_once_with(get_token())
 
 
 @pytest.mark.parametrize("valid,admin", [(False, False), (True, False), (True, True)])
