@@ -10,21 +10,24 @@ from api.utils.debug import _check_response_schema, check_responses
 
 
 @pytest.mark.parametrize(
-    "responses,status_code,body,ok",
+    "responses,in_schema,status_code,body,ok",
     [
-        ({}, 200, {"foo": "bar"}, False),
-        ({200: {"model": create_model("test", foo=(str, ...))}}, 200, {}, False),
-        ({200: {"model": create_model("test", foo=(int, ...))}}, 200, {"foo": "bar"}, False),
-        ({200: {"model": create_model("test", foo=(str, ...))}}, 200, {"foo": "bar"}, True),
-        ({404: {"content": {"application/json": {"examples": {}}}}}, 404, {"detail": "Not Found"}, False),
+        ({}, False, 200, {"foo": "bar"}, True),
+        ({}, True, 200, {"foo": "bar"}, False),
+        ({200: {"model": create_model("test", foo=(str, ...))}}, True, 200, {}, False),
+        ({200: {"model": create_model("test", foo=(int, ...))}}, True, 200, {"foo": "bar"}, False),
+        ({200: {"model": create_model("test", foo=(str, ...))}}, True, 200, {"foo": "bar"}, True),
+        ({404: {"content": {"application/json": {"examples": {}}}}}, True, 404, {"detail": "Not Found"}, False),
         (
             {404: {"content": {"application/json": {"examples": {"1": {"value": {"detail": "Not Found"}}}}}}},
+            True,
             404,
             {"detail": "blubb"},
             False,
         ),
         (
             {404: {"content": {"application/json": {"examples": {"1": {"value": {"detail": "Not Found"}}}}}}},
+            True,
             404,
             {"detail": "Not Found"},
             True,
@@ -32,11 +35,13 @@ from api.utils.debug import _check_response_schema, check_responses
     ],
 )
 async def test___check_response_schema(
-    responses: Any, status_code: int, body: Any, ok: bool, mocker: MockerFixture
+    responses: Any, in_schema: bool, status_code: int, body: Any, ok: bool, mocker: MockerFixture
 ) -> None:
     logger = mocker.patch("api.utils.debug.logger")
 
-    _check_response_schema("GET", MagicMock(responses=responses), status_code, json.dumps(body).encode())
+    _check_response_schema(
+        "GET", MagicMock(responses=responses, include_in_schema=in_schema), status_code, json.dumps(body).encode()
+    )
 
     if ok:
         logger.error.assert_not_called()
