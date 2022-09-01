@@ -28,7 +28,7 @@ PyJWT = "^2.4.0"
 [tool.poetry.dev-dependencies]
 flake8 = "^4.0.1"
 isort = "^5.10.1"
-black = "^22.6.0"
+black = "^22.8.0"
 wemake-python-styleguide = "^0.16.1"
 mypy = "^0.971"
 SQLAlchemy = { extras = ["mypy"], version = "^1.4.40" }
