@@ -54,7 +54,7 @@ save
 git apply --allow-empty --index .staged.patch && rm .staged.patch && touch .staged.patch
 git add -u
 
-$HOME/.local/bin/poe pre-commit
+PATH=$HOME/.local/bin:$PATH poe pre-commit
 code=$?
 
 git add -u
