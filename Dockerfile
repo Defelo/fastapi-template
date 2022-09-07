@@ -12,7 +12,7 @@ COPY poetry.lock /build/
 RUN set -ex \
     && virtualenv .venv \
     && . .venv/bin/activate \
-    && poetry install -n --no-root --no-dev
+    && poetry install -n --no-root --without dev
 
 COPY api/version.py /build/
 COPY .git /build/.git/

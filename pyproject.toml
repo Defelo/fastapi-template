@@ -25,7 +25,7 @@ starlette = "^0.19.1"
 alembic = "^1.8.1"
 PyJWT = "^2.4.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8 = "^4.0.1"
 isort = "^5.10.1"
 black = "^22.8.0"
@@ -86,7 +86,7 @@ default = true
 [tool.poe.tasks.setup]
 shell = """
 set -ex
-poetry install --remove-untracked
+poetry install --sync
 if ! [[ -e .env ]]; then cp fastapi.env .env; fi
 ./pre-commit.sh install
 unset VIRTUAL_ENV
