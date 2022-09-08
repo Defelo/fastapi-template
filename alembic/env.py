@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from api import models  # noqa
 from api.database.database import Base, get_url
 
 
@@ -63,8 +64,17 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def include_object(obj, name, type_, reflected, compare_to) -> bool:
+    return not NAME or type_ != "table" or name.startswith(NAME + "_")
+
+
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata, version_table=version_table)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table=version_table,
+        include_object=include_object,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
