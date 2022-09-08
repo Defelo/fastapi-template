@@ -1,8 +1,27 @@
+from typing import Any
+
 from fastapi import APIRouter
 
 from . import oauth, recaptcha, session, test, user
+from .internal import INTERNAL_ROUTERS
+from ..auth import jwt_auth
 
 
-ROUTERS: dict[str, tuple[APIRouter, str | None]] = {
-    module.router.tags[0]: (module.router, module.__doc__) for module in [user, session, oauth, recaptcha, test]
-}
+ROUTER = APIRouter()
+TAGS: list[dict[str, Any]] = []
+
+
+for module in [user, session, oauth, recaptcha, test]:
+    name = module.__name__.split(".")[-1]
+    router = APIRouter(tags=[name])
+    router.include_router(module.router)
+    ROUTER.include_router(router)
+
+    TAGS.append({"name": name, "description": module.__doc__ or ""})
+
+TAGS.append({"name": "internal", "description": "Internal endpoints"})
+
+for r in INTERNAL_ROUTERS:
+    router = APIRouter(prefix="/_internal", tags=["internal"], dependencies=[jwt_auth])
+    router.include_router(r)
+    ROUTER.include_router(router)

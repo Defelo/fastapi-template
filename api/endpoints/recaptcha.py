@@ -9,7 +9,7 @@ from ..utils.docs import responses
 from ..utils.recaptcha import recaptcha_enabled
 
 
-router = APIRouter(tags=["recaptcha"])
+router = APIRouter()
 
 
 @router.get("/recaptcha", responses=responses(cast(type, str | None)))

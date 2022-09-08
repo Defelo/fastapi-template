@@ -24,7 +24,7 @@ Some endpoints require one or more of the following conditions to be met:
 
 
 import asyncio
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import Awaitable, Callable, TypeVar
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
@@ -33,7 +33,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
-from .endpoints import ROUTERS
+from .endpoints import ROUTER, TAGS
 from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .models import User
@@ -47,7 +47,6 @@ T = TypeVar("T")
 
 logger = get_logger(__name__)
 
-tags: list[Any] = []
 app = FastAPI(
     title="FastAPI",
     description=__doc__,
@@ -55,11 +54,9 @@ app = FastAPI(
     root_path=ROOT_PATH,
     root_path_in_servers=False,
     servers=[{"url": ROOT_PATH}] if ROOT_PATH else None,
-    openapi_tags=tags,
+    openapi_tags=TAGS,
 )
-for name, (router, description) in ROUTERS.items():
-    app.include_router(router)
-    tags.append({"name": name, "description": description})
+app.include_router(ROUTER)
 
 if DEBUG:
     app.middleware("http")(check_responses)

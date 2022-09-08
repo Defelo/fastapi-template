@@ -29,7 +29,7 @@ from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
 
-router = APIRouter(tags=["sessions"])
+router = APIRouter()
 
 
 async def _check_mfa(user: models.User, mfa_code: str | None, recovery_code: str | None) -> bool:

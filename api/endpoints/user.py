@@ -33,7 +33,7 @@ from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
 
-router = APIRouter(tags=["users"])
+router = APIRouter()
 
 
 @router.get("/users", dependencies=[admin_auth], responses=admin_responses(UsersResponse))

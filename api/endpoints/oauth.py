@@ -22,7 +22,7 @@ from ..schemas.oauth import OAuthConnection, OAuthLogin, OAuthProvider
 from ..utils.docs import responses
 
 
-router = APIRouter(tags=["oauth"])
+router = APIRouter()
 
 
 def add_qs(url: str, q: dict[str, str]) -> str:
