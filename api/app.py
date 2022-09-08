@@ -22,7 +22,6 @@ Some endpoints require one or more of the following conditions to be met:
 - **AUTH**: The request is authenticated using a valid API token (static/JWT).
 """
 
-
 import asyncio
 from typing import Awaitable, Callable, TypeVar
 

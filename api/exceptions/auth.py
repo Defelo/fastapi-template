@@ -28,3 +28,9 @@ def admin_responses(default: type, *args: Type[APIException]) -> dict[int | str,
     """api responses for admin_auth dependency"""
 
     return user_responses(default, *args, PermissionDeniedError)
+
+
+def internal_responses(default: type, *args: Type[APIException]) -> dict[int | str, dict[str, Any]]:
+    """api responses for admin_auth dependency"""
+
+    return responses(default, *args, InvalidTokenError)
