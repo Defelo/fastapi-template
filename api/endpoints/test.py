@@ -10,7 +10,7 @@ from ..schemas.test import JWTAuthResponse, TestResponse
 from ..utils.docs import responses
 
 
-router = APIRouter(tags=["test"])
+router = APIRouter()
 
 
 @router.get("/test", responses=responses(TestResponse))
