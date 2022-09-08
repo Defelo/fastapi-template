@@ -4,7 +4,7 @@
 
 ## Requirements
 Some endpoints require one or more of the following conditions to be met:
-- **AUTH**: The request is authenticated using a valid API token.
+- **AUTH**: The request is authenticated using a valid API token (static/JWT).
 """
 
 from typing import Awaitable, Callable, TypeVar
