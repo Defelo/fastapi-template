@@ -5,8 +5,10 @@ from unittest.mock import MagicMock
 
 import jwt as _jwt
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 
+from api.settings import settings
 from api.utils import jwt
 
 
@@ -19,10 +21,10 @@ from api.utils import jwt
     ],
 )
 async def test__jwt_encode(
-    data: dict[str, Any], now: int, ttl: int, expected: dict[str, Any], mocker: MockerFixture
+    data: dict[str, Any], now: int, ttl: int, expected: dict[str, Any], mocker: MockerFixture, monkeypatch: MonkeyPatch
 ) -> None:
     mocker.patch("api.utils.jwt.datetime", MagicMock(utcnow=lambda: datetime.utcfromtimestamp(now)))
-    mocker.patch("api.utils.jwt.JWT_SECRET", "My JWT secret")
+    monkeypatch.setattr(settings, "jwt_secret", "My JWT secret")
 
     token = jwt.encode_jwt(data, timedelta(seconds=ttl))
 
@@ -46,11 +48,11 @@ async def test__jwt_encode(
     ],
 )
 async def test__jwt_decode(
-    data: dict[str, Any], ttl: int, require: list[str], expected: bool, mocker: MockerFixture
+    data: dict[str, Any], ttl: int, require: list[str], expected: bool, monkeypatch: MonkeyPatch
 ) -> None:
     exp = (datetime.utcnow() + timedelta(seconds=ttl)).replace(microsecond=0)
     token = _jwt.encode(data | {"exp": exp}, "My JWT secret", "HS256")
-    mocker.patch("api.utils.jwt.JWT_SECRET", "My JWT secret")
+    monkeypatch.setattr(settings, "jwt_secret", "My JWT secret")
     result = jwt.decode_jwt(token, require)
 
     if expected:

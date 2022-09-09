@@ -3,7 +3,7 @@ from contextvars import ContextVar
 from typing import Any, AsyncIterator, Type, TypeVar, cast
 
 from sqlalchemy import Column
-from sqlalchemy.engine import URL, Result
+from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.future import select as sa_select
 from sqlalchemy.orm import DeclarativeMeta, registry, selectinload
@@ -14,19 +14,8 @@ from sqlalchemy.sql.expression import exists as sa_exists
 from sqlalchemy.sql.functions import count
 from sqlalchemy.sql.selectable import Exists, Select
 
-from ..environment import (
-    DB_DATABASE,
-    DB_DRIVER,
-    DB_HOST,
-    DB_PASSWORD,
-    DB_PORT,
-    DB_USERNAME,
-    MAX_OVERFLOW,
-    POOL_RECYCLE,
-    POOL_SIZE,
-    SQL_SHOW_STATEMENTS,
-)
 from ..logger import get_logger
+from ..settings import settings
 
 
 T = TypeVar("T")
@@ -84,7 +73,7 @@ class Base(metaclass=DeclarativeMeta):
 
 
 class DB:
-    def __init__(self, url: URL, **kwargs: Any):
+    def __init__(self, url: str, **kwargs: Any):
         self.engine: AsyncEngine = create_async_engine(url, **kwargs)
         self._session: ContextVar[AsyncSession | None] = ContextVar("session", default=None)
         self._close_event: ContextVar[Event | None] = ContextVar("close_event", default=None)
@@ -185,17 +174,6 @@ class DB:
             await close_event.wait()
 
 
-def get_url() -> URL:
-    return URL.create(
-        drivername=DB_DRIVER,
-        username=DB_USERNAME,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT,
-        database=DB_DATABASE,
-    )
-
-
 def get_database() -> DB:
     """
     Create a database connection object using the environment variables
@@ -204,10 +182,10 @@ def get_database() -> DB:
     """
 
     return DB(
-        url=get_url(),
+        url=settings.database_url,
         pool_pre_ping=True,
-        pool_recycle=POOL_RECYCLE,
-        pool_size=POOL_SIZE,
-        max_overflow=MAX_OVERFLOW,
-        echo=SQL_SHOW_STATEMENTS,
+        pool_recycle=settings.pool_recycle,
+        pool_size=settings.pool_size,
+        max_overflow=settings.max_overflow,
+        echo=settings.sql_show_statements,
     )
