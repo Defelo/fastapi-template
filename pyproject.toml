@@ -37,6 +37,7 @@ coverage = "^6.4"
 pytest-asyncio = "^0.19.0"
 pytest-mock = "^3.8.2"
 aiosqlite = "^0.17.0"
+rich = "^12.5.1"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
