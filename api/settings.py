@@ -46,6 +46,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = secrets.token_urlsafe(64)
 
+    internal_jwt_ttl: int = 10
+
     access_token_ttl: int = 300
     refresh_token_ttl: int = 2592000
     oauth_register_token_ttl: int = 600
