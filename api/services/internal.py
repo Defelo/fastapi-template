@@ -31,7 +31,7 @@ class InternalService(Enum):
     @property
     def client(self) -> AsyncClient:
         return AsyncClient(
-            base_url=self.value + "/_internal",
+            base_url=self.value.rstrip("/") + "/_internal",
             headers={"Authorization": self._get_token()},
             event_hooks={"response": [self._handle_error]},
         )
