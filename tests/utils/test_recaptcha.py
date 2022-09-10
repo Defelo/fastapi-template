@@ -3,9 +3,11 @@ from typing import Any, AsyncIterator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 
 from .._utils import mock_asynccontextmanager
+from api.settings import settings
 from api.utils import recaptcha
 
 
@@ -14,15 +16,15 @@ from api.utils import recaptcha
     [("", "", False), (None, None, False), ("foo", "", False), ("", "bar", False), ("foo", "bar", True)],
 )
 async def test__recaptcha_enabled(
-    secret: str | None, sitekey: str | None, expected: bool, mocker: MockerFixture
+    secret: str | None, sitekey: str | None, expected: bool, monkeypatch: MonkeyPatch
 ) -> None:
-    mocker.patch("api.utils.recaptcha.RECAPTCHA_SITEKEY", sitekey)
-    mocker.patch("api.utils.recaptcha.RECAPTCHA_SECRET", secret)
+    monkeypatch.setattr(settings, "recaptcha_sitekey", sitekey)
+    monkeypatch.setattr(settings, "recaptcha_secret", secret)
 
     assert recaptcha.recaptcha_enabled() == expected
 
 
-async def test__check_recaptcha(mocker: MockerFixture) -> None:
+async def test__check_recaptcha(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     client_patch = mocker.patch("aiohttp.ClientSession")
 
     secret = MagicMock()
@@ -46,7 +48,7 @@ async def test__check_recaptcha(mocker: MockerFixture) -> None:
     session.post.side_effect = session_context
     response.json.side_effect = lambda: func_callbacks[1]() or {"success": expected}
 
-    mocker.patch("api.utils.recaptcha.RECAPTCHA_SECRET", secret)
+    monkeypatch.setattr(settings, "recaptcha_secret", secret)
     assert await recaptcha.check_recaptcha(token) == expected
 
     assert_calls()

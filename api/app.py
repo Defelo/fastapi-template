@@ -33,10 +33,10 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
 from .endpoints import ROUTER, TAGS
-from .environment import DEBUG, ROOT_PATH, SENTRY_DSN
 from .logger import get_logger, setup_sentry
 from .models import User
 from .models.session import clean_expired_sessions
+from .settings import settings
 from .utils.debug import check_responses
 from .utils.docs import add_endpoint_links_to_openapi_docs
 from .version import get_version
@@ -50,25 +50,25 @@ app = FastAPI(
     title="FastAPI",
     description=__doc__,
     version=get_version().description,
-    root_path=ROOT_PATH,
+    root_path=settings.root_path,
     root_path_in_servers=False,
-    servers=[{"url": ROOT_PATH}] if ROOT_PATH else None,
+    servers=[{"url": settings.root_path}] if settings.root_path else None,
     openapi_tags=TAGS,
 )
 app.include_router(ROUTER)
 
-if DEBUG:
+if settings.debug:
     app.middleware("http")(check_responses)
 
 
 def setup_app() -> None:
     add_endpoint_links_to_openapi_docs(app.openapi())
 
-    if SENTRY_DSN:
+    if settings.sentry_dsn:
         logger.debug("initializing sentry")
-        setup_sentry(app, SENTRY_DSN, "FastAPI", get_version().description)
+        setup_sentry(app, settings.sentry_dsn, "FastAPI", get_version().description)
 
-    if DEBUG:
+    if settings.debug:
         app.add_middleware(
             CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
         )

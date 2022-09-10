@@ -9,7 +9,7 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from uvicorn.config import LOGGING_CONFIG
 from uvicorn.logging import DefaultFormatter
 
-from .environment import LOG_LEVEL
+from .settings import settings
 
 
 def setup_sentry(app: FastAPI, dsn: str, name: str, version: str) -> None:
@@ -44,6 +44,6 @@ def get_logger(name: str) -> logging.Logger:
 
     logger: logging.Logger = logging.getLogger(name)
     logger.addHandler(logging_handler)
-    logger.setLevel(LOG_LEVEL.upper())
+    logger.setLevel(settings.log_level)
 
     return logger

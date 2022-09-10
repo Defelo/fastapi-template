@@ -40,6 +40,7 @@ coverage = "^6.4"
 pytest-asyncio = "^0.19.0"
 pytest-mock = "^3.8.2"
 aiosqlite = "^0.17.0"
+rich = "^12.5.1"
 
 [tool.poe.tasks]
 api = { script = "api.main:main", envfile = ".env" }
@@ -53,7 +54,8 @@ test = "pytest -v tests"
 pre-commit = ["lint", "coverage"]
 alembic = { cmd = "alembic", envfile = ".env" }
 migrate = { cmd = "alembic upgrade head", envfile = ".env" }
-sign = { cmd = """python -c 'from api.utils import jwt; import sys, json; print(jwt.encode_jwt(json.loads(sys.argv[1]), jwt.timedelta(seconds=int(sys.argv[2]))))'""", envfile = ".env" }
+env = { cmd = """python -c 'from api.settings import settings; from rich import print; print(settings)'""", envfile = ".env" }
+jwt = { cmd = """python -c 'from api.utils import jwt; import sys, json; print(jwt.encode_jwt(json.loads(sys.argv[1]), jwt.timedelta(seconds=int(sys.argv[2]))))'""", envfile = ".env" }
 hash-password = """python -c 'from api.utils import password_hasher; import sys, getpass; print(password_hasher.hash(sys.argv[1] if len(sys.argv) > 1 else getpass.getpass()))'"""
 
 [tool.poe.tasks.coverage]
@@ -131,7 +133,7 @@ concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 fail_under = 70
-exclude_lines = ["if TYPE_CHECKING:", "if DEBUG:"]
+exclude_lines = ["if TYPE_CHECKING:", "if settings.debug:"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

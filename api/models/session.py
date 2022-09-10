@@ -11,9 +11,9 @@ from sqlalchemy.orm import Mapped, relationship
 
 from .user import User
 from ..database import Base, db, db_wrapper, delete
-from ..environment import ACCESS_TOKEN_TTL, REFRESH_TOKEN_TTL
 from ..logger import get_logger
 from ..redis import redis
+from ..settings import settings
 from ..utils.jwt import decode_jwt, encode_jwt
 
 
@@ -62,7 +62,8 @@ class Session(Base):
 
     def _generate_access_token(self) -> str:
         return encode_jwt(
-            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token}, timedelta(seconds=ACCESS_TOKEN_TTL)
+            {"uid": self.user_id, "sid": self.id, "rt": self.refresh_token},
+            timedelta(seconds=settings.access_token_ttl),
         )
 
     @staticmethod
@@ -80,21 +81,23 @@ class Session(Base):
         session: Session | None = await db.get(Session, Session.user, refresh_token=token_hash)
         if not session:
             raise ValueError("Invalid refresh token")
-        if datetime.utcnow() > session.last_update + timedelta(seconds=REFRESH_TOKEN_TTL):
+        if datetime.utcnow() > session.last_update + timedelta(seconds=settings.refresh_token_ttl):
             await session.logout()
             raise SessionExpiredError
 
-        await redis.setex(f"session_logout:{session.refresh_token}", ACCESS_TOKEN_TTL, 1)
+        await redis.setex(f"session_logout:{session.refresh_token}", settings.access_token_ttl, 1)
         refresh_token = secrets.token_urlsafe(64)
         session.refresh_token = _hash_token(refresh_token)
         session.last_update = datetime.utcnow()
         return session, session._generate_access_token(), refresh_token
 
     async def logout(self) -> None:
-        await redis.setex(f"session_logout:{self.refresh_token}", ACCESS_TOKEN_TTL, 1)
+        await redis.setex(f"session_logout:{self.refresh_token}", settings.access_token_ttl, 1)
         await db.delete(self)
 
 
 @db_wrapper
 async def clean_expired_sessions() -> None:
-    await db.exec(delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=REFRESH_TOKEN_TTL)))
+    await db.exec(
+        delete(Session).where(Session.last_update < datetime.utcnow() - timedelta(seconds=settings.refresh_token_ttl))
+    )

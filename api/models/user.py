@@ -9,9 +9,9 @@ from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.sql import Select
 
 from ..database import Base, db, select
-from ..environment import ADMIN_PASSWORD, ADMIN_USERNAME
 from ..logger import get_logger
 from ..redis import redis
+from ..settings import settings
 from ..utils.jwt import decode_jwt
 from ..utils.passwords import hash_password, verify_password
 
@@ -80,8 +80,8 @@ class User(Base):
         if await db.exists(select(User)):
             return
 
-        await User.create(ADMIN_USERNAME, ADMIN_PASSWORD, True, True)
-        logger.info(f"Admin user '{ADMIN_USERNAME}' has been created!")
+        await User.create(settings.admin_username, settings.admin_password, True, True)
+        logger.info(f"Admin user '{settings.admin_username}' has been created!")
 
     async def check_password(self, password: str) -> bool:
         if not self.password:

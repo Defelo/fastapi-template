@@ -2,11 +2,13 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 from sqlalchemy import func
 
 from api.database import db, db_wrapper, select
 from api.models import User
+from api.settings import settings
 from api.utils.passwords import verify_password
 
 
@@ -66,9 +68,9 @@ async def test__filter_by_name() -> None:
 
 @pytest.mark.parametrize("first_user", [True, False])
 @db_wrapper
-async def test__initialize(first_user: bool, mocker: MockerFixture) -> None:
-    mocker.patch("api.models.user.ADMIN_USERNAME", "admin_username")
-    mocker.patch("api.models.user.ADMIN_PASSWORD", "admin_password")
+async def test__initialize(first_user: bool, monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "admin_username", "admin_username")
+    monkeypatch.setattr(settings, "admin_password", "admin_password")
 
     if not first_user:
         await User.create("other_user", "other_password", True, True)

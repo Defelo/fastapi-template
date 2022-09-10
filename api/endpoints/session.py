@@ -10,7 +10,6 @@ from .oauth import resolve_code
 from .. import models
 from ..auth import admin_auth, get_user, user_auth
 from ..database import db, filter_by
-from ..environment import LOGIN_FAILS_BEFORE_CAPTCHA, OAUTH_REGISTER_TOKEN_TTL
 from ..exceptions.auth import admin_responses, user_responses
 from ..exceptions.oauth import InvalidOAuthCodeError, ProviderNotFoundError
 from ..exceptions.session import (
@@ -24,6 +23,7 @@ from ..models.session import SessionExpiredError
 from ..redis import redis
 from ..schemas.oauth import OAuthLogin
 from ..schemas.session import Login, LoginResponse, OAuthLoginResponse, Session
+from ..settings import settings
 from ..utils.docs import responses
 from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
@@ -95,7 +95,7 @@ async def login(data: Login, request: Request) -> Any:
     failed_attempts = int(await redis.get(key := f"failed_login_attempts:{name_hash}") or "0")
     if (
         recaptcha_enabled()
-        and (0 <= LOGIN_FAILS_BEFORE_CAPTCHA <= failed_attempts)
+        and (0 <= settings.login_fails_before_captcha <= failed_attempts)
         and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response))
     ):
         raise RecaptchaError
@@ -159,9 +159,10 @@ async def oauth_login(data: OAuthLogin, request: Request) -> Any:
     if not connection:
         token = str(uuid4())
         async with redis.pipeline() as pipe:
-            await pipe.setex(f"oauth_register_token:{token}:provider", OAUTH_REGISTER_TOKEN_TTL, data.provider_id)
-            await pipe.setex(f"oauth_register_token:{token}:user_id", OAUTH_REGISTER_TOKEN_TTL, remote_user_id)
-            await pipe.setex(f"oauth_register_token:{token}:display_name", OAUTH_REGISTER_TOKEN_TTL, display_name or "")
+            ttl = settings.oauth_register_token_ttl
+            await pipe.setex(f"oauth_register_token:{token}:provider", ttl, data.provider_id)
+            await pipe.setex(f"oauth_register_token:{token}:user_id", ttl, remote_user_id)
+            await pipe.setex(f"oauth_register_token:{token}:display_name", ttl, display_name or "")
             await pipe.execute()
 
         return {"register_token": token}

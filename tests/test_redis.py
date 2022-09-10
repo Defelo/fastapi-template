@@ -1,15 +1,13 @@
 from _pytest.monkeypatch import MonkeyPatch
 from aioredis import Redis
 
-from ._utils import import_module, reload_module
-from api import environment, redis
+from ._utils import import_module
+from api import redis
+from api.settings import settings
 
 
 async def test__redis(monkeypatch: MonkeyPatch) -> None:
-    monkeypatch.setenv("REDIS_DB", "42")
-    monkeypatch.setenv("REDIS_PORT", "4953")
-    monkeypatch.setenv("REDIS_HOST", "my_redis_host")
-    reload_module(environment)
+    monkeypatch.setattr(settings, "redis_url", "redis://my_redis_host:4953/42")
 
     r = import_module(redis).redis
 

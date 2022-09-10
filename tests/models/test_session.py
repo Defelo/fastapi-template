@@ -2,12 +2,14 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_mock import MockerFixture
 
 from api.database import db, db_context, db_wrapper, select
 from api.models import Session, User
 from api.models import session as _session
 from api.models.session import SessionExpiredError
+from api.settings import settings
 
 
 TEST_HASH = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
@@ -51,8 +53,8 @@ async def test__create(mocker: MockerFixture) -> None:
     assert at == generate_access_token()
 
 
-async def test__generate_access_token(mocker: MockerFixture) -> None:
-    mocker.patch("api.models.session.ACCESS_TOKEN_TTL", 42)
+async def test__generate_access_token(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "access_token_ttl", 42)
     encode_jwt = mocker.patch("api.models.session.encode_jwt")
 
     session = Session(user_id="my_user_id", id="my_id", refresh_token="my_refresh_token")  # noqa: S106
@@ -113,8 +115,8 @@ async def test__refresh__invalid_refresh_token() -> None:
 
 
 @db_wrapper
-async def test__refresh__session_expired(mocker: MockerFixture) -> None:
-    mocker.patch("api.models.session.REFRESH_TOKEN_TTL", 42)
+async def test__refresh__session_expired(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "refresh_token_ttl", 42)
 
     user = await _get_user()
     session, _, rt = await user.create_session("my_device_name")
@@ -128,9 +130,9 @@ async def test__refresh__session_expired(mocker: MockerFixture) -> None:
 
 
 @db_wrapper
-async def test__refresh__ok(mocker: MockerFixture) -> None:
-    mocker.patch("api.models.session.ACCESS_TOKEN_TTL", 1337)
-    mocker.patch("api.models.session.REFRESH_TOKEN_TTL", 2)
+async def test__refresh__ok(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "access_token_ttl", 1337)
+    monkeypatch.setattr(settings, "refresh_token_ttl", 2)
     redis = mocker.patch("api.models.session.redis", new_callable=AsyncMock)
 
     user = await _get_user()
@@ -148,9 +150,9 @@ async def test__refresh__ok(mocker: MockerFixture) -> None:
     assert at == session._generate_access_token()
 
 
-async def test__logout(mocker: MockerFixture) -> None:
+async def test__logout(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     redis = mocker.patch("api.models.session.redis", new_callable=AsyncMock)
-    mocker.patch("api.models.session.ACCESS_TOKEN_TTL", 1337)
+    monkeypatch.setattr(settings, "access_token_ttl", 1337)
 
     async with db_context():
         user = await _get_user()
@@ -166,8 +168,8 @@ async def test__logout(mocker: MockerFixture) -> None:
         assert await db.count(select(Session)) == 0
 
 
-async def test__clean_expired_sessions(mocker: MockerFixture) -> None:
-    mocker.patch("api.models.session.REFRESH_TOKEN_TTL", 42)
+async def test__clean_expired_sessions(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "refresh_token_ttl", 42)
 
     async with db_context():
         user = await _get_user()

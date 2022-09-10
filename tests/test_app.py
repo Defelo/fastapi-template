@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture
 
 from ._utils import import_module, mock_asynccontextmanager
 from api import app
+from api.settings import settings
 
 
 def get_decorated_function(
@@ -27,12 +28,12 @@ def get_decorated_function(
     return module, functions[0]
 
 
-async def test__setup_app__sentry(mocker: MockerFixture) -> None:
+async def test__setup_app__sentry(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     get_version_mock = mocker.patch("api.app.get_version")
     setup_sentry_mock = mocker.patch("api.app.setup_sentry")
     app_mock = mocker.patch("api.app.app")
-    sentry_dsn_mock = mocker.patch("api.app.SENTRY_DSN")
-    mocker.patch("api.app.DEBUG", False)
+    monkeypatch.setattr(settings, "sentry_dsn", sentry_dsn_mock := MagicMock())
+    monkeypatch.setattr(settings, "debug", False)
 
     app.setup_app()
 
@@ -40,11 +41,11 @@ async def test__setup_app__sentry(mocker: MockerFixture) -> None:
     setup_sentry_mock.assert_called_once_with(app_mock, sentry_dsn_mock, "FastAPI", get_version_mock().description)
 
 
-async def test__setup_app__debug(mocker: MockerFixture) -> None:
+async def test__setup_app__debug(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     app_mock = mocker.patch("api.app.app")
     cors_middleware_mock = mocker.patch("api.app.CORSMiddleware")
-    mocker.patch("api.app.SENTRY_DSN", None)
-    mocker.patch("api.app.DEBUG", True)
+    monkeypatch.setattr(settings, "sentry_dsn", None)
+    monkeypatch.setattr(settings, "debug", True)
 
     app.setup_app()
 

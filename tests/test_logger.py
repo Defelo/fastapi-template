@@ -8,6 +8,7 @@ from uvicorn.logging import DefaultFormatter
 
 from ._utils import mock_list
 from api import logger
+from api.settings import settings
 
 
 async def test__setup_sentry(mocker: MockerFixture) -> None:
@@ -53,7 +54,7 @@ async def test__logging_handler() -> None:
 
 
 async def test__get_logger(monkeypatch: MonkeyPatch, mocker: MockerFixture) -> None:
-    mocker.patch("api.logger.LOG_LEVEL", "my_log_level")
+    monkeypatch.setattr(settings, "log_level", "MY_LOG_LEVEL")
     getlogger_patch = mocker.patch("api.logger.logging.getLogger")
     logging_handler_patch = mocker.patch("api.logger.logging_handler")
 

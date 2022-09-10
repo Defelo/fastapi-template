@@ -4,6 +4,7 @@ from typing import Any, Literal, Type
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
@@ -26,6 +27,7 @@ from api.exceptions.user import (
     UserAlreadyExistsError,
 )
 from api.models.session import _hash_token
+from api.settings import settings
 from api.utils.jwt import decode_jwt
 from api.utils.passwords import verify_password
 
@@ -151,6 +153,7 @@ async def test__create_user(
     user_client: AsyncClient,
     session: MagicMock,
     mocker: MockerFixture,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     _cnt = len(await _get_users())
 
@@ -166,8 +169,8 @@ async def test__create_user(
     mocker.patch("api.endpoints.user.check_recaptcha", AsyncMock(side_effect="correct_response".__eq__))
 
     session.user.admin = is_admin
-    mocker.patch("api.endpoints.user.OPEN_REGISTRATION", open_registration)
-    mocker.patch("api.endpoints.user.OPEN_OAUTH_REGISTRATION", open_oauth_registration)
+    monkeypatch.setattr(settings, "open_registration", open_registration)
+    monkeypatch.setattr(settings, "open_oauth_registration", open_oauth_registration)
 
     pipe = AsyncMock()
     pipeline, *_ = mock_asynccontextmanager(0, pipe)
@@ -447,6 +450,7 @@ async def test__delete(
     user_client: AsyncClient,
     session: MagicMock,
     mocker: MockerFixture,
+    monkeypatch: MonkeyPatch,
 ) -> None:
     admin_user, user, *other_users = await _get_users()
     user.admin = admin
@@ -455,8 +459,8 @@ async def test__delete(
     if not other_admins:
         admin_user.admin = False
 
-    mocker.patch("api.endpoints.user.OPEN_REGISTRATION", open_registration)
-    mocker.patch("api.endpoints.user.OPEN_OAUTH_REGISTRATION", open_oauth_registration)
+    monkeypatch.setattr(settings, "open_registration", open_registration)
+    monkeypatch.setattr(settings, "open_oauth_registration", open_oauth_registration)
 
     session.user.admin = is_admin
     if is_self:

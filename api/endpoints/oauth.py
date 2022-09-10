@@ -9,7 +9,6 @@ from fastapi import APIRouter
 from .. import models
 from ..auth import get_user
 from ..database import db, filter_by
-from ..environment import OAUTH_PROVIDERS
 from ..exceptions.auth import admin_responses
 from ..exceptions.oauth import (
     ConnectionNotFoundError,
@@ -19,6 +18,7 @@ from ..exceptions.oauth import (
 )
 from ..exceptions.user import CannotDeleteLastLoginMethodError, UserNotFoundError
 from ..schemas.oauth import OAuthConnection, OAuthLogin, OAuthProvider
+from ..settings import settings
 from ..utils.docs import responses
 
 
@@ -31,10 +31,10 @@ def add_qs(url: str, q: dict[str, str]) -> str:
 
 
 async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
-    if login.provider_id not in OAUTH_PROVIDERS:
+    if login.provider_id not in settings.oauth_providers:
         raise ProviderNotFoundError
 
-    provider = OAUTH_PROVIDERS[login.provider_id]
+    provider = settings.oauth_providers[login.provider_id]
     async with ClientSession() as session, session.post(
         provider.token_url,
         data={
@@ -59,15 +59,15 @@ async def resolve_code(login: OAuthLogin) -> tuple[str, str | None]:
         return x.format(access_token=access_token)
 
     async with ClientSession() as session, session.get(
-        fmt(provider.userinfo_url), headers=dict(parse_qsl(fmt(provider.userinfo_headers)))
+        fmt(provider.userinfo_url), headers={k: fmt(v) for k, v in provider.userinfo_headers.items()}
     ) as response:
         if response.status != 200:
             raise InvalidOAuthCodeError
 
         data = await response.json()
 
-    remote_user_id = provider.user_id_path.input(data).first()
-    display_name = provider.display_name_path.input(data).first()
+    remote_user_id = provider.userinfo_id_path.input(data).first()
+    display_name = provider.userinfo_name_path.input(data).first()
 
     return str(remote_user_id), str(display_name) if display_name else None
 
@@ -82,7 +82,7 @@ async def get_oauth_providers() -> Any:
             "name": v.name,
             "authorize_url": add_qs(v.authorize_url, {"response_type": "code", "client_id": v.client_id}),
         }
-        for k, v in OAUTH_PROVIDERS.items()
+        for k, v in settings.oauth_providers.items()
     ]
 
 

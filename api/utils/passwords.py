@@ -3,11 +3,11 @@ from typing import cast
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHash, VerificationError
 
-from ..environment import HASH_MEMORY_COST, HASH_TIME_COST
+from api.settings import settings
 from api.utils.async_thread import run_in_thread
 
 
-password_hasher = PasswordHasher(HASH_TIME_COST, HASH_MEMORY_COST)
+password_hasher = PasswordHasher(settings.hash_time_cost, settings.hash_memory_cost)
 
 
 @run_in_thread

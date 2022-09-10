@@ -10,7 +10,6 @@ from sqlalchemy import asc, func
 from .. import models
 from ..auth import admin_auth, get_user, is_admin, user_auth
 from ..database import db, filter_by, select
-from ..environment import OPEN_OAUTH_REGISTRATION, OPEN_REGISTRATION
 from ..exceptions.auth import PermissionDeniedError, admin_responses, user_responses
 from ..exceptions.oauth import InvalidOAuthTokenError, RemoteAlreadyLinkedError
 from ..exceptions.user import (
@@ -29,6 +28,7 @@ from ..exceptions.user import (
 from ..redis import redis
 from ..schemas.session import LoginResponse
 from ..schemas.user import MFA_CODE_REGEX, CreateUser, UpdateUser, User, UsersResponse
+from ..settings import settings
 from ..utils.mfa import check_mfa_code
 from ..utils.recaptcha import check_recaptcha, recaptcha_enabled
 
@@ -112,9 +112,9 @@ async def create_user(data: CreateUser, request: Request, admin: bool = is_admin
     if not data.oauth_register_token and not data.password:
         raise NoLoginMethodError
     if not admin:
-        if data.password and not OPEN_REGISTRATION:
+        if data.password and not settings.open_registration:
             raise RegistrationDisabledError
-        if data.oauth_register_token and not OPEN_OAUTH_REGISTRATION:
+        if data.oauth_register_token and not settings.open_oauth_registration:
             raise OAuthRegistrationDisabledError
 
         if recaptcha_enabled() and not (data.recaptcha_response and await check_recaptcha(data.recaptcha_response)):
@@ -292,7 +292,7 @@ async def delete_user(
     *Requirements:* **SELF** or **ADMIN**
     """
 
-    if not (OPEN_REGISTRATION or OPEN_OAUTH_REGISTRATION) and not admin:
+    if not (settings.open_registration or settings.open_oauth_registration) and not admin:
         raise PermissionDeniedError
 
     if user.admin and not await db.exists(filter_by(models.User, admin=True).filter(models.User.id != user.id)):
