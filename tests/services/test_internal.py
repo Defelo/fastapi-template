@@ -38,7 +38,7 @@ async def test__internal_service__handle_error(code: int, ok: bool) -> None:
 
 async def test__internal_service__client(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     async_client = mocker.patch("api.services.internal.AsyncClient")
-    service = MagicMock(value="http://example.service:1234/test")
+    service = MagicMock(value="http://example.service:1234/test/")
 
     result = InternalService.client.fget(service)  # type: ignore
 
