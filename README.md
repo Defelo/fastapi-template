@@ -121,5 +121,6 @@ poe pre-commit      # run pre-commit checks
   poe coverage      # run unit tests with coverage
 poe alembic         # use alembic to manage database migrations
 poe migrate         # run database migrations
+poe env             # show settings from .env file
 poe jwt             # generate a jwt with the given payload and ttl in seconds
 ```
