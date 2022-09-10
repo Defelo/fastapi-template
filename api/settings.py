@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = secrets.token_urlsafe(64)
 
+    internal_jwt_ttl: int = 10
+
     database_url: str = Field(
         "mysql+aiomysql://fastapi:fastapi@mariadb:3306/fastapi",
         regex=r"^(mysql\+aiomysql|postgresql\+asyncpg|sqlite\+aiosqlite)://.*$",
