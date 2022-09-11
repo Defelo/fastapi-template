@@ -49,8 +49,12 @@ class StaticTokenAuth(HTTPAuth):
 
 
 class JWTAuth(HTTPAuth):
+    def __init__(self, audience: list[str] | None = None):
+        super().__init__()
+        self.audience: list[str] | None = audience
+
     async def __call__(self, request: Request) -> dict[Any, Any]:
-        if (data := decode_jwt(get_token(request))) is None:
+        if (data := decode_jwt(get_token(request), audience=self.audience)) is None:
             raise InvalidTokenError
         return data
 
@@ -78,6 +82,7 @@ class UserAuth(HTTPAuth):
 
 static_token_auth = Depends(StaticTokenAuth("secret token"))
 jwt_auth = Depends(JWTAuth())
+internal_auth = Depends(JWTAuth(audience=["service_xyz"]))
 
 public_auth = Depends(UserAuth(PermissionLevel.PUBLIC))
 user_auth = Depends(UserAuth(PermissionLevel.USER))

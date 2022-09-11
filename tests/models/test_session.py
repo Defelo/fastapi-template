@@ -71,7 +71,7 @@ async def test__from_access_token__invalid_jwt(mocker: MockerFixture) -> None:
     decode_jwt = mocker.patch("api.models.session.decode_jwt", MagicMock(return_value=None))
 
     assert await Session.from_access_token("my_token") is None
-    decode_jwt.assert_called_once_with("my_token", ["uid", "sid", "rt"])
+    decode_jwt.assert_called_once_with("my_token", require=["uid", "sid", "rt"])
 
 
 async def test__from_access_token__logout(mocker: MockerFixture) -> None:
@@ -80,7 +80,7 @@ async def test__from_access_token__logout(mocker: MockerFixture) -> None:
     exists = mocker.patch("api.models.session.redis.exists", AsyncMock(return_value=True))
 
     assert await Session.from_access_token("my_token") is None
-    decode_jwt.assert_called_once_with("my_token", ["uid", "sid", "rt"])
+    decode_jwt.assert_called_once_with("my_token", require=["uid", "sid", "rt"])
     exists.assert_called_once_with("session_logout:my_refresh_token")
 
 
@@ -100,7 +100,7 @@ async def test__from_access_token__valid(session_exists: bool, mocker: MockerFix
 
     result = await Session.from_access_token("my_token")
 
-    decode_jwt.assert_called_once_with("my_token", ["uid", "sid", "rt"])
+    decode_jwt.assert_called_once_with("my_token", require=["uid", "sid", "rt"])
     exists.assert_called_once_with("session_logout:my_refresh_token")
 
     assert result is session

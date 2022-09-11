@@ -4,12 +4,11 @@ from fastapi import APIRouter
 
 from . import oauth, recaptcha, session, test, user
 from .internal import INTERNAL_ROUTERS
-from ..auth import jwt_auth
+from ..auth import internal_auth
 
 
 ROUTER = APIRouter()
 TAGS: list[dict[str, Any]] = []
-
 
 for module in [user, session, oauth, recaptcha, test]:
     name = module.__name__.split(".")[-1]
@@ -22,6 +21,6 @@ for module in [user, session, oauth, recaptcha, test]:
 TAGS.append({"name": "internal", "description": "Internal endpoints"})
 
 for r in INTERNAL_ROUTERS:
-    router = APIRouter(prefix="/_internal", tags=["internal"], dependencies=[jwt_auth])
+    router = APIRouter(prefix="/_internal", tags=["internal"], dependencies=[internal_auth])
     router.include_router(r)
     ROUTER.include_router(router)

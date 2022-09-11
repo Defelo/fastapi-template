@@ -18,9 +18,8 @@ class InternalServiceError(Exception):
 class InternalService(Enum):
     # SERVICE_XYZ = settings.service_xyz_url
 
-    @classmethod
-    def _get_token(cls) -> str:
-        return encode_jwt({}, timedelta(seconds=settings.internal_jwt_ttl))
+    def _get_token(self) -> str:
+        return encode_jwt({"aud": self.name.lower()}, timedelta(seconds=settings.internal_jwt_ttl))
 
     @classmethod
     async def _handle_error(cls, response: Response) -> None:

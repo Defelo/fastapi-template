@@ -100,7 +100,7 @@ class User(Base):
 
     @staticmethod
     async def from_access_token(access_token: str) -> User | None:
-        if (data := decode_jwt(access_token, ["uid", "sid", "rt"])) is None:
+        if (data := decode_jwt(access_token, require=["uid", "sid", "rt"])) is None:
             return None
         if await redis.exists(f"session_logout:{data['rt']}"):
             return None
