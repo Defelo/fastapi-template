@@ -12,10 +12,12 @@ from api.settings import settings
 async def test__internal_service__get_token(mocker: MockerFixture, monkeypatch: MonkeyPatch) -> None:
     encode_jwt = mocker.patch("api.services.internal.encode_jwt")
     monkeypatch.setattr(settings, "internal_jwt_ttl", 123)
+    service = MagicMock()
+    service.name = "MY_SERVICE"
 
-    result = InternalService._get_token()
+    result = InternalService._get_token(service)
 
-    encode_jwt.assert_called_once_with({}, timedelta(seconds=123))
+    encode_jwt.assert_called_once_with({"aud": "my_service"}, timedelta(seconds=123))
     assert result == encode_jwt()
 
 

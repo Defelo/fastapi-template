@@ -53,7 +53,7 @@ async def test__jwt_decode(
     exp = (datetime.utcnow() + timedelta(seconds=ttl)).replace(microsecond=0)
     token = _jwt.encode(data | {"exp": exp}, "My JWT secret", "HS256")
     monkeypatch.setattr(settings, "jwt_secret", "My JWT secret")
-    result = jwt.decode_jwt(token, require)
+    result = jwt.decode_jwt(token, require=require)
 
     if expected:
         assert isinstance(result, dict)
