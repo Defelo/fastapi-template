@@ -12,7 +12,7 @@ from typing import Awaitable, Callable, TypeVar
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .database import db, db_context
@@ -63,7 +63,7 @@ async def db_session(request: Request, call_next: Callable[..., Awaitable[T]]) -
 
 
 @app.exception_handler(StarletteHTTPException)
-async def rollback_on_exception(request: Request, exc: HTTPException) -> JSONResponse:
+async def rollback_on_exception(request: Request, exc: HTTPException) -> Response:
     await db.session.rollback()
     return await http_exception_handler(request, exc)
 
