@@ -28,3 +28,4 @@ jobs:
           # to protected branches.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ENABLED_FOR_MANUAL_CHANGES: 'true'
+          ENABLE_GITHUB_API_PREVIEW: true
