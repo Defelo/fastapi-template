@@ -15,6 +15,8 @@ logger = get_logger(__name__)
 
 
 def _check_response_schema(method: str, route: APIRoute, status_code: int, body: bytes) -> None:
+    if status_code == 422:
+        return
     if not route.include_in_schema:
         return
     if status_code not in route.responses:
