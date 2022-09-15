@@ -12,6 +12,7 @@ from api.utils.debug import _check_response_schema, check_responses
 @pytest.mark.parametrize(
     "responses,in_schema,status_code,body,ok",
     [
+        ({}, True, 422, {}, True),
         ({}, False, 200, {"foo": "bar"}, True),
         ({}, True, 200, {"foo": "bar"}, False),
         ({200: {"model": create_model("test", foo=(str, ...))}}, True, 200, {}, False),
