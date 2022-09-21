@@ -13,7 +13,7 @@ packages = [{ include = "api" }]
 python = "^3.10"
 fastapi = "^0.84.0"
 uvicorn = "^0.18.3"
-aiohttp = "^3.8.1"
+aiohttp = "^3.8.3"
 aioredis = "^2.0.1"
 SQLAlchemy = "^1.4.40"
 aiomysql = "^0.1.1"
