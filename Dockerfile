@@ -1,4 +1,4 @@
-FROM python:3.10-alpine AS builder
+FROM python:3.11.0-alpine AS builder
 
 RUN apk add --no-cache build-base gcc musl-dev libffi-dev postgresql14-dev git
 
@@ -19,7 +19,7 @@ COPY .git /build/.git/
 RUN python version.py
 
 
-FROM python:3.10-alpine
+FROM python:3.11.0-alpine
 
 LABEL org.opencontainers.image.source="https://github.com/Defelo/fastapi-template"
 
